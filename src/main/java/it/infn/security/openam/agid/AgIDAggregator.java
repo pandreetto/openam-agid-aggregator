@@ -26,9 +26,14 @@ public class AgIDAggregator
         try {
 
             AgIDAuthorityDiscoveryImpl disco = new AgIDAuthorityDiscoveryImpl();
-            AttributeAggregator aggregator = new AttributeAggregator(disco);
+            AttributeAggregator aggregator = new AttributeAggregator(disco, null);
 
-            Map<String, String> attributes = aggregator.getAttributes();
+            /*
+             * TODO verify
+             */
+            String spidCode = token.getProperty("spidCode");
+
+            Map<String, String> attributes = aggregator.getAttributes(spidCode);
             for (String kName : attributes.keySet()) {
                 token.setProperty(kName, attributes.get(kName));
             }

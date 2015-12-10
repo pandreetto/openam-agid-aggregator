@@ -13,7 +13,7 @@ public class AgIDAuthorityDiscoveryImpl
 
     }
 
-    public List<URL> getEndpoints()
+    public List<URL> getEndpoints(List<String> requiredAttributes)
         throws AggregatorException {
         return null;
     }
