@@ -27,7 +27,7 @@ public class AgIDAggregator
         try {
 
             AgIDAuthorityDiscoveryImpl disco = new AgIDAuthorityDiscoveryImpl();
-            AttributeAggregator aggregator = new AttributeAggregator(disco, null, null);
+            AttributeAggregator aggregator = new AttributeAggregator(disco, null);
 
             /*
              * TODO verify

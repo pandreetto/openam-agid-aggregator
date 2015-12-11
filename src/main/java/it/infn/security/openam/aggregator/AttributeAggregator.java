@@ -3,7 +3,6 @@ package it.infn.security.openam.aggregator;
 import it.infn.security.openam.utils.SAML2ObjectBuilder;
 import it.infn.security.openam.utils.SignUtils;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,17 +47,12 @@ public class AttributeAggregator {
 
     private SOAPClient soapClient;
 
-    public AttributeAggregator(AuthorityDiscovery disco, List<String> requiredAttrs, String entId) {
+    public AttributeAggregator(AuthorityDiscovery disco, List<String> requiredAttrs)
+        throws AggregatorException {
         authDiscovery = disco;
         requiredAttributes = requiredAttrs;
-        entityId = entId;
-
-        X509KeyManager keyManager = null;
-        X509TrustManager trustManager = null;
-        int conTimeout = 5000;
-        int maxRequests = 50;
-        int buffSize = 4096;
-        soapClient = buildSOAPClient(keyManager, trustManager, conTimeout, maxRequests, buffSize);
+        entityId = AggrConfiguration.getInstance().getEntityID();
+        soapClient = buildSOAPClient();
     }
 
     public Map<String, List<String>> getAttributes(String subjectID)
@@ -66,7 +60,7 @@ public class AttributeAggregator {
 
         HashMap<String, List<String>> result = new HashMap<String, List<String>>();
 
-        for (URL epr : authDiscovery.getEndpoints(requiredAttributes)) {
+        for (AuthorityInfo info : authDiscovery.getAuthorityInfos(requiredAttributes)) {
 
             try {
 
@@ -81,7 +75,7 @@ public class AttributeAggregator {
 
                 samlRequest.setID(requestId);
                 samlRequest.setIssueInstant(new DateTime());
-                samlRequest.setDestination(epr.toString());
+                samlRequest.setDestination(info.getURL().toString());
                 samlRequest.setVersion(SAMLVersion.VERSION_20);
 
                 Issuer issuer = SAML2ObjectBuilder.buildIssuer();
@@ -91,7 +85,7 @@ public class AttributeAggregator {
                 Subject subject = SAML2ObjectBuilder.buildSubject();
                 NameID nameId = SAML2ObjectBuilder.buildNameID();
                 nameId.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
-                nameId.setNameQualifier(epr.toString());
+                nameId.setNameQualifier(info.getURL().toString());
                 nameId.setValue(subjectID);
                 subject.setNameID(nameId);
                 samlRequest.setSubject(subject);
@@ -105,7 +99,7 @@ public class AttributeAggregator {
                     }
                 }
 
-                SignUtils.signObject(samlRequest);
+                SignUtils.signObject(samlRequest, null, null);
 
                 Body body = SAML2ObjectBuilder.buildBody();
                 body.getUnknownXMLObjects().add(samlRequest);
@@ -114,13 +108,16 @@ public class AttributeAggregator {
 
                 msgContext.setOutboundMessage(envelope);
 
-                soapClient.send(epr.toString(), msgContext);
+                soapClient.send(info.getURL().toString(), msgContext);
 
                 Envelope soapResponse = (Envelope) msgContext.getInboundMessage();
                 Response samlResponse = (Response) soapResponse.getBody().getOrderedChildren().get(0);
                 Assertion samlAssertion = samlResponse.getAssertions().get(0);
 
-                SignUtils.verifySignature(samlAssertion.getSignature(), null);
+                if (info.getCertificates().size() == 0) {
+                    throw new AggregatorException("Cannot validate signature: missing certificate");
+                }
+                SignUtils.verifySignature(samlAssertion.getSignature(), info.getCertificates().get(0));
 
                 if (!samlResponse.getInResponseTo().equals(entityId)) {
                     throw new AggregatorException("Request ID mismatch");
@@ -162,21 +159,20 @@ public class AttributeAggregator {
         return result;
     }
 
-    private SOAPClient buildSOAPClient(X509KeyManager keyManager, X509TrustManager trustManager, int conTimeout,
-            int maxRequests, int buffSize) {
+    private SOAPClient buildSOAPClient()
+        throws AggregatorException {
 
-        /*
-         * see
-         * org.glite.authz.pep.server.config.PEPDaemonIniConfigurationParser#
-         * processPDPConfiguration
-         */
+        AggrConfiguration configuration = AggrConfiguration.getInstance();
+        X509KeyManager keyManager = configuration.getKeyManager();
+        X509TrustManager trustManager = configuration.getTrustManager();
+
         HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
         httpClientBuilder.setContentCharSet("UTF-8");
-        httpClientBuilder.setConnectionTimeout(conTimeout);
-        httpClientBuilder.setMaxTotalConnections(maxRequests);
-        httpClientBuilder.setMaxConnectionsPerHost(maxRequests);
-        httpClientBuilder.setReceiveBufferSize(buffSize);
-        httpClientBuilder.setSendBufferSize(buffSize);
+        httpClientBuilder.setConnectionTimeout(configuration.getConnectionTimeout());
+        httpClientBuilder.setMaxTotalConnections(configuration.getMaxRequests());
+        httpClientBuilder.setMaxConnectionsPerHost(configuration.getMaxRequests());
+        httpClientBuilder.setReceiveBufferSize(configuration.getBufferSize());
+        httpClientBuilder.setSendBufferSize(configuration.getBufferSize());
 
         if (keyManager != null && trustManager != null) {
             TLSProtocolSocketFactory factory = new TLSProtocolSocketFactory(keyManager, trustManager);

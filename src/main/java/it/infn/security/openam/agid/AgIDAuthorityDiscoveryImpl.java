@@ -1,10 +1,10 @@
 package it.infn.security.openam.agid;
 
-import java.net.URL;
-import java.util.List;
-
 import it.infn.security.openam.aggregator.AggregatorException;
 import it.infn.security.openam.aggregator.AuthorityDiscovery;
+import it.infn.security.openam.aggregator.AuthorityInfo;
+
+import java.util.List;
 
 public class AgIDAuthorityDiscoveryImpl
     implements AuthorityDiscovery {
@@ -13,7 +13,7 @@ public class AgIDAuthorityDiscoveryImpl
 
     }
 
-    public List<URL> getEndpoints(List<String> requiredAttributes)
+    public List<AuthorityInfo> getAuthorityInfos(List<String> requiredAttributes)
         throws AggregatorException {
         return null;
     }
