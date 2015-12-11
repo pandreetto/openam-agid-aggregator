@@ -3,6 +3,7 @@ package it.infn.security.openam.agid;
 import it.infn.security.openam.aggregator.AggregatorException;
 import it.infn.security.openam.aggregator.AttributeAggregator;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -19,23 +20,28 @@ public class AgIDAggregator
 
     protected Debug debug = Debug.getInstance("/tmp/aggregator.log");
 
-    public void onLoginSuccess(@SuppressWarnings("rawtypes") Map requestParamsMap, HttpServletRequest request,
-            HttpServletResponse response, SSOToken token)
+    public void onLoginSuccess(@SuppressWarnings("rawtypes")
+    Map requestParamsMap, HttpServletRequest request, HttpServletResponse response, SSOToken token)
         throws AuthenticationException {
 
         try {
 
             AgIDAuthorityDiscoveryImpl disco = new AgIDAuthorityDiscoveryImpl();
-            AttributeAggregator aggregator = new AttributeAggregator(disco, null);
+            AttributeAggregator aggregator = new AttributeAggregator(disco, null, null);
 
             /*
              * TODO verify
              */
             String spidCode = token.getProperty("spidCode");
 
-            Map<String, String> attributes = aggregator.getAttributes(spidCode);
+            Map<String, List<String>> attributes = aggregator.getAttributes(spidCode);
             for (String kName : attributes.keySet()) {
-                token.setProperty(kName, attributes.get(kName));
+                for (String value : attributes.get(kName)) {
+                    /*
+                     * TODO check multivalue property
+                     */
+                    token.setProperty(kName, value);
+                }
             }
 
         } catch (SSOException ex) {
@@ -49,8 +55,8 @@ public class AgIDAggregator
         }
     }
 
-    public void onLoginFailure(@SuppressWarnings("rawtypes") Map requestParamsMap, HttpServletRequest request,
-            HttpServletResponse response)
+    public void onLoginFailure(@SuppressWarnings("rawtypes")
+    Map requestParamsMap, HttpServletRequest request, HttpServletResponse response)
         throws AuthenticationException {
         // Not used
     }

@@ -4,13 +4,16 @@ import it.infn.security.openam.utils.SAML2ObjectBuilder;
 import it.infn.security.openam.utils.SignUtils;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.joda.time.DateTime;
 import org.opensaml.common.SAMLVersion;
 import org.opensaml.saml2.core.Assertion;
 import org.opensaml.saml2.core.Attribute;
@@ -29,6 +32,7 @@ import org.opensaml.ws.soap.client.http.HttpSOAPRequestParameters;
 import org.opensaml.ws.soap.client.http.TLSProtocolSocketFactory;
 import org.opensaml.ws.soap.soap11.Body;
 import org.opensaml.ws.soap.soap11.Envelope;
+import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.parse.BasicParserPool;
 
 public class AttributeAggregator {
@@ -40,11 +44,14 @@ public class AttributeAggregator {
 
     private List<String> requiredAttributes;
 
+    private String entityId;
+
     private SOAPClient soapClient;
 
-    public AttributeAggregator(AuthorityDiscovery disco, List<String> requiredAttrs) {
+    public AttributeAggregator(AuthorityDiscovery disco, List<String> requiredAttrs, String entId) {
         authDiscovery = disco;
         requiredAttributes = requiredAttrs;
+        entityId = entId;
 
         X509KeyManager keyManager = null;
         X509TrustManager trustManager = null;
@@ -54,51 +61,51 @@ public class AttributeAggregator {
         soapClient = buildSOAPClient(keyManager, trustManager, conTimeout, maxRequests, buffSize);
     }
 
-    public Map<String, String> getAttributes(String subjectID)
+    public Map<String, List<String>> getAttributes(String subjectID)
         throws AggregatorException {
 
-        /*
-         * TODO missing issuer
-         */
-        String messageIssuerId = "";
-
-        HashMap<String, String> result = new HashMap<String, String>();
+        HashMap<String, List<String>> result = new HashMap<String, List<String>>();
 
         for (URL epr : authDiscovery.getEndpoints(requiredAttributes)) {
 
             try {
 
+                String requestId = "_" + UUID.randomUUID().toString();
+
                 SOAPMessageContext msgContext = new BasicSOAPMessageContext();
-                msgContext.setCommunicationProfileId(null);
-                msgContext.setOutboundMessageIssuer(messageIssuerId);
+                msgContext.setCommunicationProfileId("urn:oasis:names:tc:SAML:2.0:profiles:query");
+                msgContext.setOutboundMessageIssuer(entityId);
                 msgContext.setSOAPRequestParameters(SOAP_PARAM);
 
                 AttributeQuery samlRequest = SAML2ObjectBuilder.buildAttributeQuery();
 
-                samlRequest.setID(null);
-                samlRequest.setIssueInstant(null);
-                samlRequest.setDestination(null);
+                samlRequest.setID(requestId);
+                samlRequest.setIssueInstant(new DateTime());
+                samlRequest.setDestination(epr.toString());
                 samlRequest.setVersion(SAMLVersion.VERSION_20);
 
                 Issuer issuer = SAML2ObjectBuilder.buildIssuer();
-                issuer.setValue(messageIssuerId);
+                issuer.setValue(entityId);
                 samlRequest.setIssuer(issuer);
 
                 Subject subject = SAML2ObjectBuilder.buildSubject();
                 NameID nameId = SAML2ObjectBuilder.buildNameID();
-                nameId.setFormat(null);
-                nameId.setNameQualifier(null);
+                nameId.setFormat("urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified");
+                nameId.setNameQualifier(epr.toString());
                 nameId.setValue(subjectID);
                 subject.setNameID(nameId);
                 samlRequest.setSubject(subject);
 
                 if (requiredAttributes != null && requiredAttributes.size() > 0) {
-                    /*
-                     * TODO implement attribute filter
-                     */
+                    for (String reqAttr : requiredAttributes) {
+                        Attribute attribute = SAML2ObjectBuilder.buildAttribute();
+                        attribute.setName(reqAttr);
+                        attribute.setNameFormat(Attribute.BASIC);
+                        samlRequest.getAttributes().add(attribute);
+                    }
                 }
 
-                SignUtils.signObject(samlRequest, null, null);
+                SignUtils.signObject(samlRequest);
 
                 Body body = SAML2ObjectBuilder.buildBody();
                 body.getUnknownXMLObjects().add(samlRequest);
@@ -115,6 +122,10 @@ public class AttributeAggregator {
 
                 SignUtils.verifySignature(samlAssertion.getSignature(), null);
 
+                if (!samlResponse.getInResponseTo().equals(entityId)) {
+                    throw new AggregatorException("Request ID mismatch");
+                }
+
                 List<AttributeStatement> attrStat = samlAssertion.getAttributeStatements();
                 if (attrStat == null || attrStat.size() == 0) {
                     throw new AggregatorException("Missing attribute statement");
@@ -123,9 +134,17 @@ public class AttributeAggregator {
                 List<Attribute> attrList = attrStat.get(0).getAttributes();
                 if (attrList != null) {
                     for (Attribute attribute : attrList) {
-                        /*
-                         * TODO implement
-                         */
+
+                        List<XMLObject> xValues = attribute.getAttributeValues();
+                        if (xValues != null) {
+
+                            List<String> aValues = new ArrayList<String>(xValues.size());
+                            for (XMLObject value : xValues) {
+                                aValues.add(value.getDOM().getTextContent().trim());
+                            }
+
+                            result.put(attribute.getName(), aValues);
+                        }
                     }
                 }
 
@@ -147,7 +166,9 @@ public class AttributeAggregator {
             int maxRequests, int buffSize) {
 
         /*
-         * see org.glite.authz.pep.server.config.PEPDaemonIniConfigurationParser#processPDPConfiguration
+         * see
+         * org.glite.authz.pep.server.config.PEPDaemonIniConfigurationParser#
+         * processPDPConfiguration
          */
         HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
         httpClientBuilder.setContentCharSet("UTF-8");

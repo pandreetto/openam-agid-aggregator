@@ -12,7 +12,9 @@ import java.util.logging.Logger;
 import javax.security.auth.Subject;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.xml.security.algorithms.MessageDigestAlgorithm;
 import org.apache.xml.security.c14n.Canonicalizer;
+import org.apache.xml.security.signature.XMLSignature;
 import org.opensaml.common.impl.SAMLObjectContentReference;
 import org.opensaml.security.SAMLSignatureProfileValidator;
 import org.opensaml.xml.io.Marshaller;
@@ -92,7 +94,7 @@ public class SignUtils {
         return null;
     }
 
-    public static void signObject(SignableXMLObject object, String signAlgorithm, String digestAlgorithm)
+    public static void signObject(SignableXMLObject object)
         throws SignatureException, MarshallingException, CertificateException {
 
         /*
@@ -105,14 +107,15 @@ public class SignUtils {
         Signature objSignature = SAML2ObjectBuilder.buildSignature();
         objSignature.setSigningCredential(credential);
         objSignature.setCanonicalizationAlgorithm(Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS);
-        objSignature.setSignatureAlgorithm(signAlgorithm);
+        objSignature.setSignatureAlgorithm(XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512);
         objSignature.setKeyInfo(SignUtils.buildKeyInfo(srvCert));
 
         object.setSignature(objSignature);
 
         for (ContentReference refItem : objSignature.getContentReferences()) {
             if (refItem instanceof SAMLObjectContentReference) {
-                ((SAMLObjectContentReference) refItem).setDigestAlgorithm(digestAlgorithm);
+                SAMLObjectContentReference tmpRef = (SAMLObjectContentReference) refItem;
+                tmpRef.setDigestAlgorithm(MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA512);
             }
         }
 
@@ -120,11 +123,6 @@ public class SignUtils {
         marshaller.marshall(object);
 
         Signer.signObject(objSignature);
-    }
-
-    public static void signObject(SignableXMLObject object)
-        throws SignatureException, MarshallingException, CertificateException {
-        signObject(object, null, null);
     }
 
     public static void verifySignature(Signature signature, Subject requester)

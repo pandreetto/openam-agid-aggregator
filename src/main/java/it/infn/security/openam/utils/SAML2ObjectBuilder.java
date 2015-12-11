@@ -1,10 +1,12 @@
 package it.infn.security.openam.utils;
 
 import org.opensaml.Configuration;
+import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Subject;
+import org.opensaml.saml2.core.impl.AttributeBuilder;
 import org.opensaml.saml2.core.impl.AttributeQueryBuilder;
 import org.opensaml.saml2.core.impl.IssuerBuilder;
 import org.opensaml.saml2.core.impl.NameIDBuilder;
@@ -73,6 +75,9 @@ public class SAML2ObjectBuilder {
     private static final SignatureBuilder signBuilder = (SignatureBuilder) builderFactory
             .getBuilder(Signature.DEFAULT_ELEMENT_NAME);
 
+    private static final AttributeBuilder attrBuilder = (AttributeBuilder) builderFactory
+            .getBuilder(Attribute.DEFAULT_ELEMENT_NAME);
+
     public static Marshaller getMarshaller(XMLObject xmlObj) {
         return marshallerFactory.getMarshaller(xmlObj);
     }
@@ -123,6 +128,10 @@ public class SAML2ObjectBuilder {
 
     public static Signature buildSignature() {
         return signBuilder.buildObject();
+    }
+
+    public static Attribute buildAttribute() {
+        return attrBuilder.buildObject();
     }
 
 }
