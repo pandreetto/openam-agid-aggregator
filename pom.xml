@@ -19,10 +19,10 @@
             <id>forgerock-releases</id>
             <url>http://maven.forgerock.org/repo/releases</url>
         </repository>
-        <repository>
+        <!-- repository>
             <id>forgerock-snapshots</id>
             <url>http://maven.forgerock.org/repo/openam-snapshots</url>
-        </repository>
+        </repository -->
     </repositories>
 
     <dependencies>
@@ -35,6 +35,12 @@
         <dependency>
             <groupId>org.forgerock.openam</groupId>
             <artifactId>openam-shared</artifactId>
+            <version>12.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.forgerock.openam</groupId>
+            <artifactId>openam-federation-library</artifactId>
             <version>12.0.0</version>
             <scope>provided</scope>
         </dependency>
