@@ -1,5 +1,6 @@
 package it.infn.security.openam.agid;
 
+import it.infn.security.openam.aggregator.AggrConfiguration;
 import it.infn.security.openam.aggregator.AggregatorException;
 import it.infn.security.openam.aggregator.AttributeAggregator;
 
@@ -14,6 +15,7 @@ import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
 import com.sun.identity.authentication.spi.AMPostAuthProcessInterface;
 import com.sun.identity.authentication.spi.AuthenticationException;
+import com.sun.identity.plugin.session.SessionProvider;
 import com.sun.identity.saml2.assertion.Attribute;
 import com.sun.identity.saml2.common.SAML2Exception;
 import com.sun.identity.saml2.plugins.DefaultSPAttributeMapper;
@@ -41,9 +43,12 @@ public class AgIDAggregator
             if (spidCode == null) {
                 return;
             }
+            
+            String realm = token.getProperty(SessionProvider.REALM);
 
-            AgIDAuthorityDiscoveryImpl disco = new AgIDAuthorityDiscoveryImpl();
-            AttributeAggregator aggregator = new AttributeAggregator(disco, null);
+            AggrConfiguration config = AgIDAggrConfiguration.getInstance(realm);
+            AgIDAuthorityDiscoveryImpl disco = new AgIDAuthorityDiscoveryImpl(config);
+            AttributeAggregator aggregator = new AttributeAggregator(disco, config);
 
             Map<String, List<String>> attributes = aggregator.getAttributes(spidCode);
             for (String kName : attributes.keySet()) {

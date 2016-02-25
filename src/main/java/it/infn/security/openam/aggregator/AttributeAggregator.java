@@ -41,26 +41,25 @@ public class AttributeAggregator {
 
     private AuthorityDiscovery authDiscovery;
 
-    private List<String> requiredAttributes;
-
-    private String entityId;
+    private AggrConfiguration configuration;
 
     private SOAPClient soapClient;
 
-    public AttributeAggregator(AuthorityDiscovery disco, List<String> requiredAttrs)
-        throws AggregatorException {
+    public AttributeAggregator(AuthorityDiscovery disco, AggrConfiguration config) throws AggregatorException {
         authDiscovery = disco;
-        requiredAttributes = requiredAttrs;
-        entityId = AggrConfiguration.getInstance().getEntityID();
+        configuration = config;
         soapClient = buildSOAPClient();
     }
 
     public Map<String, List<String>> getAttributes(String subjectID)
         throws AggregatorException {
 
+        List<String> requiredAttributes = configuration.getRequiredAttribute();
+        String entityId = configuration.getEntityID();
+
         HashMap<String, List<String>> result = new HashMap<String, List<String>>();
 
-        for (AuthorityInfo info : authDiscovery.getAuthorityInfos(requiredAttributes)) {
+        for (AuthorityInfo info : authDiscovery.getAuthorityInfos()) {
 
             try {
 
@@ -119,7 +118,7 @@ public class AttributeAggregator {
                 }
                 SignUtils.verifySignature(samlAssertion.getSignature(), info.getCertificates().get(0));
 
-                if (!samlResponse.getInResponseTo().equals(entityId)) {
+                if (!samlResponse.getInResponseTo().equals(requestId)) {
                     throw new AggregatorException("Request ID mismatch");
                 }
 
@@ -162,7 +161,6 @@ public class AttributeAggregator {
     private SOAPClient buildSOAPClient()
         throws AggregatorException {
 
-        AggrConfiguration configuration = AggrConfiguration.getInstance();
         X509KeyManager keyManager = configuration.getKeyManager();
         X509TrustManager trustManager = configuration.getTrustManager();
 
