@@ -15,7 +15,9 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.metadata.AttributeAuthorityDescriptor;
 import org.opensaml.saml2.metadata.AttributeService;
 import org.opensaml.saml2.metadata.EntityDescriptor;
@@ -62,11 +64,6 @@ public class AgIDAuthorityDiscoveryImpl
 
         ArrayList<AuthorityInfo> result = new ArrayList<AuthorityInfo>();
 
-        /*
-         * TODO use attribute to select authorities
-         */
-        // configuration.getRequiredAttribute();
-
         File cacheDir = new File(configuration.getMetadataCacheDir());
         for (File mdFile : cacheDir.listFiles()) {
             if (mdFile.getAbsolutePath().endsWith(".xml")) {
@@ -82,6 +79,8 @@ public class AgIDAuthorityDiscoveryImpl
 
     private AuthorityInfo parseAuthInfo(File mdFile)
         throws AggregatorException {
+
+        Set<String> reqAttributes = configuration.getRequiredAttributes();
 
         BufferedReader reader = null;
         try {
@@ -111,6 +110,13 @@ public class AgIDAuthorityDiscoveryImpl
                         }
 
                     }
+                }
+            }
+
+            for (Attribute pubAttr : aaDescr.getAttributes()) {
+                String attrName = pubAttr.getName();
+                if (reqAttributes.contains(pubAttr)) {
+                    result.addRequiredAttribute(attrName);
                 }
             }
 

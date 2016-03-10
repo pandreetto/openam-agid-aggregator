@@ -13,6 +13,8 @@ public class AuthorityInfo {
 
     private List<X509Certificate> certs;
 
+    private List<String> attributes;
+
     public AuthorityInfo(String id) {
         entityID = id;
         certs = new ArrayList<X509Certificate>(1);
@@ -36,5 +38,13 @@ public class AuthorityInfo {
 
     public List<X509Certificate> getCertificates() {
         return certs;
+    }
+
+    public void addRequiredAttribute(String attr) {
+        attributes.add(attr);
+    }
+
+    public List<String> getRequiredAttributes() {
+        return attributes;
     }
 }

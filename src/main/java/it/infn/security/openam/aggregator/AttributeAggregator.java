@@ -58,12 +58,13 @@ public class AttributeAggregator {
     public Map<String, List<String>> getAttributes(String subjectID)
         throws AggregatorException {
 
-        List<String> requiredAttributes = configuration.getRequiredAttribute();
         String entityId = configuration.getEntityID();
 
         HashMap<String, List<String>> result = new HashMap<String, List<String>>();
 
         for (AuthorityInfo info : authDiscovery.getAuthorityInfos()) {
+
+            List<String> requiredAttributes = info.getRequiredAttributes();
 
             try {
 

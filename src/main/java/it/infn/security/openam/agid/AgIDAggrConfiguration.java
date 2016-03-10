@@ -7,8 +7,8 @@ import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -161,7 +161,7 @@ public class AgIDAggrConfiguration
         return 4096;
     }
 
-    public List<String> getRequiredAttribute()
+    public Set<String> getRequiredAttributes()
         throws AggregatorException {
 
         /*
@@ -170,7 +170,7 @@ public class AgIDAggrConfiguration
 
         String[] attrs = SystemProperties.get(ATTRIBUTES_LIST).split(":");
 
-        ArrayList<String> result = new ArrayList<String>(attrs.length);
+        HashSet<String> result = new HashSet<String>(attrs.length);
         for (String tmps : attrs) {
             result.add(tmps.trim());
         }

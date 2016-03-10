@@ -2,7 +2,7 @@ package it.infn.security.openam.aggregator;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.List;
+import java.util.Set;
 
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
@@ -30,7 +30,7 @@ public interface AggrConfiguration {
     public int getBufferSize()
         throws AggregatorException;
 
-    public List<String> getRequiredAttribute()
+    public Set<String> getRequiredAttributes()
         throws AggregatorException;
 
     public X509Certificate getServiceCertificate()
