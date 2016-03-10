@@ -5,6 +5,8 @@ import it.infn.security.openam.aggregator.AggregatorException;
 
 import java.io.FileInputStream;
 import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,11 +26,15 @@ public class AgIDAggrConfiguration
 
     private static final String ATTRIBUTES_LIST = "it.infn.security.openam.agid.required.attributes";
 
+    private static final String ENTITY_ID = "it.infn.security.openam.agid.entity.id";
+
     private static final String KEYMAN_FILE = "it.infn.security.openam.agid.key.manager.file";
 
     private static final String KEYMAN_TYPE = "it.infn.security.openam.agid.key.manager.type";
 
     private static final String KEYMAN_PWD = "it.infn.security.openam.agid.key.manager.password";
+
+    private static final String KEYMAN_ALIAS = "it.infn.security.openam.agid.key.manager.alias";
 
     private static final String TRUSTMAN_FILE = "it.infn.security.openam.agid.trust.manager.file";
 
@@ -36,14 +42,20 @@ public class AgIDAggrConfiguration
 
     private static final String TRUSTMAN_PWD = "it.infn.security.openam.agid.trust.manager.password";
 
+    private static final String METADATA_DIR = "it.infn.security.openam.agid.metadata.cache";
+
     private X509KeyManager keyManager = null;
 
     private X509TrustManager trustManager = null;
 
+    private X509Certificate serviceCert = null;
+
+    private PrivateKey serviceKey = null;
+
     /*
      * TODO implement configuration per realm
      */
-    
+
     protected AgIDAggrConfiguration(String realm) throws AggregatorException {
 
         FileInputStream fis1 = null;
@@ -113,10 +125,21 @@ public class AgIDAggrConfiguration
         if (trustManager == null) {
             throw new AggregatorException("Missing trust manager");
         }
+
+        String keyAlias = SystemProperties.get(KEYMAN_ALIAS);
+
+        serviceKey = keyManager.getPrivateKey(keyAlias);
+        if (serviceKey == null)
+            throw new AggregatorException("Cannot extract private key from key manager");
+
+        X509Certificate[] certChain = keyManager.getCertificateChain(keyAlias);
+        if (certChain == null)
+            throw new AggregatorException("Cannot extract certificates from key manager");
+        serviceCert = certChain[0];
     }
 
     public String getEntityID() {
-        return null;
+        return SystemProperties.get(ENTITY_ID);
     }
 
     public X509KeyManager getKeyManager() {
@@ -154,6 +177,21 @@ public class AgIDAggrConfiguration
         }
 
         return result;
+    }
+
+    public X509Certificate getServiceCertificate()
+        throws AggregatorException {
+        return serviceCert;
+    }
+
+    public PrivateKey getServicePrivateKey()
+        throws AggregatorException {
+        return serviceKey;
+    }
+
+    public String getMetadataCacheDir()
+        throws AggregatorException {
+        return SystemProperties.get(METADATA_DIR);
     }
 
     private static Map<String, AggrConfiguration> theConfiguration = new HashMap<String, AggrConfiguration>();

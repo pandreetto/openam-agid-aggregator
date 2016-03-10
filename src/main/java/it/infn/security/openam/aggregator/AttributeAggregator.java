@@ -34,10 +34,14 @@ import org.opensaml.ws.soap.soap11.Envelope;
 import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.parse.BasicParserPool;
 
+import com.sun.identity.shared.debug.Debug;
+
 public class AttributeAggregator {
 
     private static final HttpSOAPRequestParameters SOAP_PARAM = new HttpSOAPRequestParameters(
             "http://www.oasis-open.org/committees/security");
+
+    protected Debug debug = Debug.getInstance("Aggregator");
 
     private AuthorityDiscovery authDiscovery;
 
@@ -98,7 +102,8 @@ public class AttributeAggregator {
                     }
                 }
 
-                SignUtils.signObject(samlRequest, null, null);
+                SignUtils.signObject(samlRequest, configuration.getServiceCertificate(),
+                        configuration.getServicePrivateKey());
 
                 Body body = SAML2ObjectBuilder.buildBody();
                 body.getUnknownXMLObjects().add(samlRequest);
@@ -146,9 +151,13 @@ public class AttributeAggregator {
 
             } catch (AggregatorException aggEx) {
 
+                debug.error(aggEx.getMessage(), aggEx);
+
                 throw aggEx;
 
             } catch (Exception ex) {
+
+                debug.error(ex.getMessage(), ex);
 
                 throw new AggregatorException(ex.getMessage());
 

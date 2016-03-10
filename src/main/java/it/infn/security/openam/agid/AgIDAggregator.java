@@ -43,7 +43,7 @@ public class AgIDAggregator
             if (spidCode == null) {
                 return;
             }
-            
+
             String realm = token.getProperty(SessionProvider.REALM);
 
             AggrConfiguration config = AgIDAggrConfiguration.getInstance(realm);

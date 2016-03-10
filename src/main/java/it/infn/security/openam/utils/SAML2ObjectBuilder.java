@@ -1,6 +1,7 @@
 package it.infn.security.openam.utils;
 
 import org.opensaml.Configuration;
+import org.opensaml.DefaultBootstrap;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.core.AttributeQuery;
 import org.opensaml.saml2.core.Issuer;
@@ -18,6 +19,8 @@ import org.opensaml.xml.XMLObject;
 import org.opensaml.xml.XMLObjectBuilderFactory;
 import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.io.MarshallerFactory;
+import org.opensaml.xml.io.Unmarshaller;
+import org.opensaml.xml.io.UnmarshallerFactory;
 import org.opensaml.xml.signature.KeyInfo;
 import org.opensaml.xml.signature.KeyName;
 import org.opensaml.xml.signature.Signature;
@@ -30,12 +33,23 @@ import org.opensaml.xml.signature.impl.SignatureBuilder;
 import org.opensaml.xml.signature.impl.X509CertificateBuilder;
 import org.opensaml.xml.signature.impl.X509DataBuilder;
 import org.opensaml.xml.signature.impl.X509SubjectNameBuilder;
+import org.w3c.dom.Element;
 
 public class SAML2ObjectBuilder {
+
+    static {
+        try {
+            DefaultBootstrap.bootstrap();
+        } catch (Throwable th) {
+
+        }
+    }
 
     private static final XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
 
     private static final MarshallerFactory marshallerFactory = Configuration.getMarshallerFactory();
+
+    private static final UnmarshallerFactory unmarshallerFactory = Configuration.getUnmarshallerFactory();
 
     @SuppressWarnings("unchecked")
     private static final SOAPObjectBuilder<Envelope> envBuilder = (SOAPObjectBuilder<Envelope>) builderFactory
@@ -80,6 +94,10 @@ public class SAML2ObjectBuilder {
 
     public static Marshaller getMarshaller(XMLObject xmlObj) {
         return marshallerFactory.getMarshaller(xmlObj);
+    }
+
+    public static Unmarshaller getUnmarshaller(Element elem) {
+        return unmarshallerFactory.getUnmarshaller(elem);
     }
 
     public static Envelope buildEnvelope() {

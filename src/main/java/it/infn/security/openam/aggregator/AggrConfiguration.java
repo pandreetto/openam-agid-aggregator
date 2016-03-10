@@ -1,5 +1,7 @@
 package it.infn.security.openam.aggregator;
 
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.List;
 
 import javax.net.ssl.X509KeyManager;
@@ -26,6 +28,15 @@ public interface AggrConfiguration {
         throws AggregatorException;
 
     public List<String> getRequiredAttribute()
+        throws AggregatorException;
+
+    public X509Certificate getServiceCertificate()
+        throws AggregatorException;
+
+    public PrivateKey getServicePrivateKey()
+        throws AggregatorException;
+
+    public String getMetadataCacheDir()
         throws AggregatorException;
 
 }
