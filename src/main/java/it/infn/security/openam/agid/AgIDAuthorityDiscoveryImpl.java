@@ -43,7 +43,8 @@ public class AgIDAuthorityDiscoveryImpl
 
     private CertificateFactory certFactory = null;
 
-    public AgIDAuthorityDiscoveryImpl(AggrConfiguration config) {
+    public void init(AggrConfiguration config)
+        throws AggregatorException {
         configuration = config;
         parserPool = new BasicParserPool();
         parserPool.setNamespaceAware(true);
@@ -52,6 +53,7 @@ public class AgIDAuthorityDiscoveryImpl
             certFactory = CertificateFactory.getInstance("X.509");
         } catch (Exception ex) {
             debug.error(ex.getMessage(), ex);
+            throw new AggregatorException("Cannot initialize discovery service");
         }
     }
 

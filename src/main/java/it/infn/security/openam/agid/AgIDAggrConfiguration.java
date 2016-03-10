@@ -8,9 +8,7 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -56,7 +54,8 @@ public class AgIDAggrConfiguration
      * TODO implement configuration per realm
      */
 
-    protected AgIDAggrConfiguration(String realm) throws AggregatorException {
+    public void init(String realm)
+        throws AggregatorException {
 
         FileInputStream fis1 = null;
         try {
@@ -194,21 +193,8 @@ public class AgIDAggrConfiguration
         return SystemProperties.get(METADATA_DIR);
     }
 
-    private static Map<String, AggrConfiguration> theConfiguration = new HashMap<String, AggrConfiguration>();
-
-    public static synchronized AggrConfiguration getInstance(String realm)
-        throws AggregatorException {
-
-        if (realm == null) {
-            realm = "";
-        } else {
-            realm = realm.trim();
-        }
-
-        if (!theConfiguration.containsKey(realm)) {
-            theConfiguration.put(realm, new AgIDAggrConfiguration(realm));
-        }
-
-        return theConfiguration.get(realm);
+    public int getLoadPriority() {
+        return 0;
     }
+
 }

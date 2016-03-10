@@ -9,6 +9,9 @@ import javax.net.ssl.X509TrustManager;
 
 public interface AggrConfiguration {
 
+    public void init(String realm)
+        throws AggregatorException;
+
     public String getEntityID()
         throws AggregatorException;
 

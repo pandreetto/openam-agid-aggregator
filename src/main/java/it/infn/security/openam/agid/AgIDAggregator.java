@@ -1,8 +1,11 @@
 package it.infn.security.openam.agid;
 
 import it.infn.security.openam.aggregator.AggrConfiguration;
+import it.infn.security.openam.aggregator.AggrConfigurationFactory;
 import it.infn.security.openam.aggregator.AggregatorException;
 import it.infn.security.openam.aggregator.AttributeAggregator;
+import it.infn.security.openam.aggregator.AuthorityDiscovery;
+import it.infn.security.openam.aggregator.AuthorityDiscoveryFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -41,18 +44,20 @@ public class AgIDAggregator
             // String spidCode = token.getProperty(UID_KEY);
             String spidCode = uidRegister.get();
             if (spidCode == null) {
-                return;
+                spidCode = "andreett@infn.it";
+                // return;
             }
 
             String realm = token.getProperty(SessionProvider.REALM);
 
-            AggrConfiguration config = AgIDAggrConfiguration.getInstance(realm);
-            AgIDAuthorityDiscoveryImpl disco = new AgIDAuthorityDiscoveryImpl(config);
+            AggrConfiguration config = AggrConfigurationFactory.getInstance(realm);
+            AuthorityDiscovery disco = AuthorityDiscoveryFactory.getInstance(config);
             AttributeAggregator aggregator = new AttributeAggregator(disco, config);
 
             Map<String, List<String>> attributes = aggregator.getAttributes(spidCode);
             for (String kName : attributes.keySet()) {
                 for (String value : attributes.get(kName)) {
+                    debug.error("Found attribute " + kName + " = " + value);
                     token.setProperty(kName, value);
                 }
             }
