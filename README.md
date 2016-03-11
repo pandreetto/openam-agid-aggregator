@@ -12,14 +12,22 @@ Build it with the following command:
 
   mvn clean install
   
-the library is target/openam-agid-aggregator-0.*.*.jar
+the library is `target/openam-agid-aggregator-0.*.*.jar`
 
 ## Installation and setup
 
 Copy the library in $CATALINA_DIR/webapps/openam/WEB-INF/lib/
 where CATALINA_DIR is usually /var/lib/tomcat
 
-Configure the plugin defining the following properties in the file /etc/sysconfig/tomcat (RedHat, CentOS) or /etc/default/tomcat7 (Ubuntu):
+Install the runtime dependencies into $CATALINA_DIR/webapps/openam/WEB-INF/lib/
+- [Bouncycastle](http://search.maven.org/remotecontent?filepath=org/bouncycastle/bcprov-jdk15on/1.51/bcprov-jdk15on-1.51.jar)
+- [Commons Httpclient](http://search.maven.org/remotecontent?filepath=commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1.jar)
+- [OpenSAML core](http://search.maven.org/remotecontent?filepath=org/opensaml/opensaml/2.6.4/opensaml-2.6.4.jar)
+- [OpenSAML WS](http://search.maven.org/remotecontent?filepath=org/opensaml/openws/1.5.4/openws-1.5.4.jar)
+- [OpenSAML xmltooling](http://search.maven.org/remotecontent?filepath=org/opensaml/xmltooling/1.4.4/xmltooling-1.4.4.jar)
+- [SSL extras](http://search.maven.org/remotecontent?filepath=ca/juliusdavies/not-yet-commons-ssl/0.3.9/not-yet-commons-ssl-0.3.9.jar)
+
+Define the following properties in the file /etc/sysconfig/tomcat (RedHat, CentOS) or /etc/default/tomcat7 (Ubuntu):
 ```
 JAVA_OPTS="-server -Xms512M -Xmx2048m -XX:MaxPermSize=256m \
   -Dit.infn.security.openam.agid.required.attributes=<attribute list> \
