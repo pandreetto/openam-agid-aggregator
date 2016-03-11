@@ -15,6 +15,8 @@ public class AuthorityInfo {
 
     private List<String> attributes;
 
+    private long validUntil;
+
     public AuthorityInfo(String id) {
         entityID = id;
         certs = new ArrayList<X509Certificate>(1);
@@ -30,6 +32,14 @@ public class AuthorityInfo {
 
     public URL getURL() {
         return authURL;
+    }
+
+    public void setValidUntil(long ts) {
+        validUntil = ts;
+    }
+
+    public long getValidUntil() {
+        return validUntil;
     }
 
     public void addCertificate(X509Certificate cert) {

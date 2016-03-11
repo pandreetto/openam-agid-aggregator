@@ -42,4 +42,7 @@ public interface AggrConfiguration {
     public String getMetadataCacheDir()
         throws AggregatorException;
 
+    public int getMetadataValidity()
+        throws AggregatorException;
+
 }

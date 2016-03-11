@@ -15,8 +15,10 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Set;
 
+import org.joda.time.DateTime;
 import org.opensaml.saml2.core.Attribute;
 import org.opensaml.saml2.metadata.AttributeAuthorityDescriptor;
 import org.opensaml.saml2.metadata.AttributeService;
@@ -120,6 +122,13 @@ public class AgIDAuthorityDiscoveryImpl
                 }
             }
 
+            DateTime validUntil = entDescr.getValidUntil();
+            if (validUntil == null) {
+                int defValidity = configuration.getMetadataValidity();
+                validUntil = DateTime.now().plusDays(defValidity);
+            }
+            result.setValidUntil(validUntil.getMillis());
+
             return result;
 
         } catch (Throwable th) {
@@ -151,6 +160,39 @@ public class AgIDAuthorityDiscoveryImpl
         }
 
         return null;
+    }
+
+    private static PriorityQueue<AuthorityInfoWrapper> authCache = new PriorityQueue<AuthorityInfoWrapper>();
+
+    private synchronized void checkCache()
+        throws AggregatorException {
+        AuthorityInfoWrapper head = authCache.peek();
+        if (head == null || System.currentTimeMillis() < head.authInfo.getValidUntil()) {
+            return;
+        }
+
+    }
+
+    public class AuthorityInfoWrapper
+        implements Comparable<AuthorityInfoWrapper> {
+
+        public String fileName;
+
+        public AuthorityInfo authInfo;
+
+        public AuthorityInfoWrapper(String fName, AuthorityInfo aInfo) {
+            fileName = fName;
+            authInfo = aInfo;
+        }
+
+        public int compareTo(AuthorityInfoWrapper w1) {
+            if (authInfo.getValidUntil() < w1.authInfo.getValidUntil())
+                return -1;
+            if (authInfo.getValidUntil() > w1.authInfo.getValidUntil())
+                return 1;
+            return 0;
+        }
+
     }
 
 }

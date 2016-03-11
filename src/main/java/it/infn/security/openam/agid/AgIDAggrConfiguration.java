@@ -42,6 +42,14 @@ public class AgIDAggrConfiguration
 
     private static final String METADATA_DIR = "it.infn.security.openam.agid.metadata.cache";
 
+    private static final String METADATA_VALID = "it.infn.security.openam.agid.metadata.valid.until";
+
+    private static final String CONN_TIMEOUT = "it.infn.security.openam.agid.connection.timeout";
+
+    private static final String MAX_REQUESTS = "it.infn.security.openam.agid.max.requests";
+
+    private static final String BUFFER_SIZE = "it.infn.security.openam.agid.buffer.size";
+
     private X509KeyManager keyManager = null;
 
     private X509TrustManager trustManager = null;
@@ -150,15 +158,27 @@ public class AgIDAggrConfiguration
     }
 
     public int getConnectionTimeout() {
-        return 5000;
+        try {
+            return Integer.parseInt(SystemProperties.get(CONN_TIMEOUT, "5000"));
+        } catch (Throwable th) {
+            return 5000;
+        }
     }
 
     public int getMaxRequests() {
-        return 50;
+        try {
+            return Integer.parseInt(SystemProperties.get(MAX_REQUESTS, "50"));
+        } catch (Throwable th) {
+            return 50;
+        }
     }
 
     public int getBufferSize() {
-        return 4096;
+        try {
+            return Integer.parseInt(SystemProperties.get(BUFFER_SIZE, "4096"));
+        } catch (Throwable th) {
+            return 4096;
+        }
     }
 
     public Set<String> getRequiredAttributes()
@@ -193,8 +213,13 @@ public class AgIDAggrConfiguration
         return SystemProperties.get(METADATA_DIR);
     }
 
-    public int getLoadPriority() {
-        return 0;
+    public int getMetadataValidity()
+        throws AggregatorException {
+        try {
+            return Integer.parseInt(SystemProperties.get(METADATA_VALID, "5"));
+        } catch (Throwable th) {
+            return 5;
+        }
     }
 
 }
