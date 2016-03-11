@@ -6,7 +6,7 @@ Requirements:
 
 - Java 7
 - Maven 3
-- OpenAM 12.0.0
+- OpenAM 13.0.0
 
 Build it with the following command:
 
@@ -18,6 +18,34 @@ the library is target/openam-agid-aggregator-0.*.*.jar
 
 Copy the library in $CATALINA_DIR/webapps/openam/WEB-INF/lib/
 where CATALINA_DIR is usually /var/lib/tomcat
+
+Configure the plugin defining the following properties in the file /etc/sysconfig/tomcat (RedHat, CentOS) or /etc/default/tomcat7 (Ubuntu):
+```
+JAVA_OPTS="-server -Xms512M -Xmx2048m -XX:MaxPermSize=256m \
+  -Dit.infn.security.openam.agid.required.attributes=<attribute list> \
+  -Dit.infn.security.openam.agid.key.manager.file=<keystore_path> \
+  -Dit.infn.security.openam.agid.key.manager.type=<keystore_type> \
+  -Dit.infn.security.openam.agid.key.manager.password=<keystore_password> \
+  -Dit.infn.security.openam.agid.key.manager.alias=<keystore_alias> \
+  -Dit.infn.security.openam.agid.trust.manager.file=<truststore_path> \
+  -Dit.infn.security.openam.agid.trust.manager.type=<truststore_type> \
+  -Dit.infn.security.openam.agid.trust.manager.password=<truststore_password> \
+  -Dit.infn.security.openam.agid.entity.id=<sp_entity_id> \
+  -Dit.infn.security.openam.agid.metadata.cache=<metadata_cache_dir>"
+```
+
+The properties are:
+- `attribute_list`: colon separated list of required attribute names
+- `keystore_path`: path of the OpenAM keystore file (/usr/share/tomcat/openam/openam/keystore.jks)
+- `keystore_type`: the keystore type (JKS or PKCS12)
+- `keystore_password`: the password protecting the keystore
+- `keystore_alias`: the alias for the service certificate in the keystore
+- `truststore_path`: the path of the JVM trust anchors file (/etc/pki/ca-trust/extracted/java/cacerts)
+- `truststore_type`: the truststore type (JKS or PKCS12)
+- `truststore_password`: the password protecting the truststore (changeit)
+- `sp_entity_id`: the entity ID of the Service Provider, as reported in the metadata file
+- `metadata_cache_dir`: directory for temporary attribute authority metadata files (/usr/share/tomcat/openam/openam/metadata)
+
 
 Log in the OpenAM Console as administrator.
 
