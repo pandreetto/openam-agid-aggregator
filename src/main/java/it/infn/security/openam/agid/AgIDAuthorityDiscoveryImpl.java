@@ -39,6 +39,8 @@ public class AgIDAuthorityDiscoveryImpl
 
     private static final String REQ_PROTO = "urn:oasis:names:tc:SAML:2.0:protocol";
 
+    private static PriorityQueue<AuthorityInfoWrapper> authCache = new PriorityQueue<AuthorityInfoWrapper>();
+
     protected Debug debug = Debug.getInstance("Aggregator");
 
     private AggrConfiguration configuration;
@@ -64,19 +66,59 @@ public class AgIDAuthorityDiscoveryImpl
     public List<AuthorityInfo> getAuthorityInfos()
         throws AggregatorException {
 
-        ArrayList<AuthorityInfo> result = new ArrayList<AuthorityInfo>();
+        synchronized (authCache) {
+
+            long now = System.currentTimeMillis();
+            AuthorityInfoWrapper head = authCache.peek();
+
+            if (head == null) {
+
+                rebuildCache();
+
+            } else if (now >= head.authInfo.getValidUntil()) {
+
+                head = authCache.poll();
+                AuthorityInfo authInfo = parseAuthInfo(new File(head.fileName));
+                if (authInfo == null || authInfo.getValidUntil() <= now) {
+                    rebuildCache();
+                } else {
+                    authCache.offer(new AuthorityInfoWrapper(head.fileName, authInfo));
+                }
+            }
+        }
+
+        ArrayList<AuthorityInfo> result = new ArrayList<AuthorityInfo>(authCache.size());
+        for (AuthorityInfoWrapper infoWrapper : authCache) {
+            result.add(infoWrapper.authInfo);
+        }
+
+        return result;
+    }
+
+    private void rebuildCache()
+        throws AggregatorException {
+
+        debug.message("Triggered cache renewal");
+
+        /*
+         * TODO improve cache renewal
+         */
+        authCache.clear();
 
         File cacheDir = new File(configuration.getMetadataCacheDir());
         for (File mdFile : cacheDir.listFiles()) {
             if (mdFile.getAbsolutePath().endsWith(".xml")) {
                 AuthorityInfo authInfo = parseAuthInfo(mdFile);
-                if (authInfo != null) {
-                    result.add(authInfo);
+                if (authInfo == null) {
+                    continue;
+                } else if (authInfo.getValidUntil() < System.currentTimeMillis()) {
+                    debug.error("Metadata expired in " + mdFile.getAbsolutePath());
+                } else {
+                    authCache.offer(new AuthorityInfoWrapper(mdFile.getAbsolutePath(), authInfo));
                 }
             }
         }
 
-        return result;
     }
 
     private AuthorityInfo parseAuthInfo(File mdFile)
@@ -93,6 +135,10 @@ public class AgIDAuthorityDiscoveryImpl
 
             Unmarshaller unmarshaller = SAML2ObjectBuilder.getUnmarshaller(mdElem);
             EntityDescriptor entDescr = (EntityDescriptor) unmarshaller.unmarshall(mdElem);
+
+            /*
+             * TODO verify metadata signature against AgID certificate
+             */
 
             AuthorityInfo result = new AuthorityInfo(entDescr.getID());
 
@@ -160,17 +206,6 @@ public class AgIDAuthorityDiscoveryImpl
         }
 
         return null;
-    }
-
-    private static PriorityQueue<AuthorityInfoWrapper> authCache = new PriorityQueue<AuthorityInfoWrapper>();
-
-    private synchronized void checkCache()
-        throws AggregatorException {
-        AuthorityInfoWrapper head = authCache.peek();
-        if (head == null || System.currentTimeMillis() < head.authInfo.getValidUntil()) {
-            return;
-        }
-
     }
 
     public class AuthorityInfoWrapper
