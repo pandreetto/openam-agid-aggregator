@@ -21,6 +21,10 @@ import org.opensaml.saml2.core.AttributeStatement;
 import org.opensaml.saml2.core.Issuer;
 import org.opensaml.saml2.core.NameID;
 import org.opensaml.saml2.core.Response;
+import org.opensaml.saml2.core.Status;
+import org.opensaml.saml2.core.StatusCode;
+import org.opensaml.saml2.core.StatusDetail;
+import org.opensaml.saml2.core.StatusMessage;
 import org.opensaml.saml2.core.Subject;
 import org.opensaml.ws.soap.client.BasicSOAPMessageContext;
 import org.opensaml.ws.soap.client.SOAPClient;
@@ -117,6 +121,28 @@ public class AttributeAggregator {
 
                 Envelope soapResponse = (Envelope) msgContext.getInboundMessage();
                 Response samlResponse = (Response) soapResponse.getBody().getOrderedChildren().get(0);
+
+                Status respStatus = samlResponse.getStatus();
+                String statusCode = respStatus.getStatusCode().getValue();
+                if (!statusCode.equals(StatusCode.SUCCESS_URI)) {
+                    StringBuffer buff = new StringBuffer("No attributes from ");
+                    buff.append(info.getEntityID());
+
+                    StatusMessage msg = respStatus.getStatusMessage();
+                    if (msg != null) {
+                        buff.append(" - ").append(msg.getMessage());
+                    }
+                    StatusDetail details = respStatus.getStatusDetail();
+                    if (details != null) {
+                        buff.append(" - ").append(details.toString());
+                    }
+
+                    throw new AggregatorException(buff.toString());
+                } else if (samlResponse.getAssertions().size() == 0) {
+                    throw new AggregatorException("Cannot retrieve attributes from " + info.getEntityID()
+                            + ": Missing assertion");
+                }
+
                 Assertion samlAssertion = samlResponse.getAssertions().get(0);
 
                 if (info.getCertificates().size() == 0) {

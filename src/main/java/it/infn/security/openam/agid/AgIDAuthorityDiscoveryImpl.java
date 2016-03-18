@@ -140,7 +140,7 @@ public class AgIDAuthorityDiscoveryImpl
              * TODO verify metadata signature against AgID certificate
              */
 
-            AuthorityInfo result = new AuthorityInfo(entDescr.getID());
+            AuthorityInfo result = new AuthorityInfo(entDescr.getEntityID());
 
             AttributeAuthorityDescriptor aaDescr = entDescr.getAttributeAuthorityDescriptor(REQ_PROTO);
             for (AttributeService aaService : aaDescr.getAttributeServices()) {
