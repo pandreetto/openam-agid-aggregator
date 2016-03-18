@@ -45,6 +45,8 @@ public class AgIDAggregator
             String spidCode = uidRegister.get();
             if (spidCode == null) {
                 return;
+            } else {
+                uidRegister.remove();
             }
 
             String realm = token.getProperty(SessionProvider.REALM);
@@ -56,6 +58,7 @@ public class AgIDAggregator
             Map<String, List<String>> attributes = aggregator.getAttributes(spidCode);
             for (String kName : attributes.keySet()) {
                 for (String value : attributes.get(kName)) {
+                    debug.message("Found attribute " + kName + " = " + value);
                     token.setProperty(kName, value);
                 }
             }
