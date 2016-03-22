@@ -106,6 +106,9 @@ public class AgIDAuthorityDiscoveryImpl
         authCache.clear();
 
         File cacheDir = new File(configuration.getMetadataCacheDir());
+        if (!cacheDir.isDirectory()) {
+            throw new AggregatorException("Metadata path is not a directory: " + cacheDir.getAbsolutePath());
+        }
         for (File mdFile : cacheDir.listFiles()) {
             if (mdFile.getAbsolutePath().endsWith(".xml")) {
                 AuthorityInfo authInfo = parseAuthInfo(mdFile);
