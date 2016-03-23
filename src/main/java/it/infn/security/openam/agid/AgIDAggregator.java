@@ -57,10 +57,14 @@ public class AgIDAggregator
 
             Map<String, List<String>> attributes = aggregator.getAttributes(spidCode);
             for (String kName : attributes.keySet()) {
+                StringBuffer buff = new StringBuffer();
                 for (String value : attributes.get(kName)) {
-                    debug.message("Found attribute " + kName + " = " + value);
-                    token.setProperty(kName, value);
+                    if (buff.length() > 0)
+                        buff.append(",");
+                    buff.append(value.trim());
                 }
+                debug.message("Found attribute " + kName + " = " + buff.toString());
+                token.setProperty(kName, buff.toString());
             }
 
         } catch (SSOException ex) {
