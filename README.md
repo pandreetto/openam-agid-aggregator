@@ -49,16 +49,16 @@ root.metadata.cache=<metadata_cache_dir>
 
 The properties are:
 - `attribute_list`: colon separated list of required attribute names
-- `keystore_path`: path of the OpenAM keystore file (/usr/share/tomcat/openam/openam/keystore.jks)
-- `keystore_type`: the keystore type (JKS or PKCS12)
+- `keystore_path`: path of the OpenAM keystore file
+- `keystore_type`: the keystore type (JKS or PKCS12, default: JKS)
 - `keystore_password`: the password protecting the keystore
 - `key_alias`: the alias for the service private key in the keystore
 - `key_passphrase`: the passphrase that protects the private key in the keystore
-- `truststore_path`: the path of the JVM trust anchors file (/etc/pki/ca-trust/extracted/java/cacerts)
-- `truststore_type`: the truststore type (JKS or PKCS12)
-- `truststore_password`: the password protecting the truststore (changeit)
+- `truststore_path`: the path of the JVM trust anchors file
+- `truststore_type`: the truststore type (JKS or PKCS12, default: JKS)
+- `truststore_password`: the password protecting the truststore
 - `sp_entity_id`: the entity ID of the Service Provider, as reported in the metadata file
-- `metadata_cache_dir`: directory for temporary attribute authority metadata files (/usr/share/tomcat/openam/openam/metadata)
+- `metadata_cache_dir`: directory for temporary attribute authority metadata files
 
 
 Log in the OpenAM Console as administrator.
