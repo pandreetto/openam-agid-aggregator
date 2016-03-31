@@ -29,17 +29,22 @@ Install the runtime dependencies into $CATALINA_DIR/webapps/openam/WEB-INF/lib/
 
 Define the following properties in the file /etc/sysconfig/tomcat (RedHat, CentOS) or /etc/default/tomcat7 (Ubuntu):
 ```
-JAVA_OPTS="-server -Xms512M -Xmx2048m -XX:MaxPermSize=256m \
-  -Dit.infn.security.openam.agid.required.attributes=<attribute list> \
-  -Dit.infn.security.openam.agid.key.manager.file=<keystore_path> \
-  -Dit.infn.security.openam.agid.key.manager.type=<keystore_type> \
-  -Dit.infn.security.openam.agid.key.manager.password=<keystore_password> \
-  -Dit.infn.security.openam.agid.key.manager.alias=<keystore_alias> \
-  -Dit.infn.security.openam.agid.trust.manager.file=<truststore_path> \
-  -Dit.infn.security.openam.agid.trust.manager.type=<truststore_type> \
-  -Dit.infn.security.openam.agid.trust.manager.password=<truststore_password> \
-  -Dit.infn.security.openam.agid.entity.id=<sp_entity_id> \
-  -Dit.infn.security.openam.agid.metadata.cache=<metadata_cache_dir>"
+JAVA_OPTS="-server -Xms512M -Xmx2048m -XX:MaxPermSize=256m"
+```
+
+In the file /etc/openam-agid-aggregator/aggregator.conf define the following properties for the root realm:
+```
+root.required.attributes=<attribute list>
+root.key.manager.file=<keystore_path>
+root.key.manager.type=<keystore_type>
+root.key.manager.password=<keystore_password>
+root.key.alias=<key_alias>
+root.key.passphrase=<key_passphrase>
+root.trust.manager.file=<truststore_path>
+root.trust.manager.type=<truststore_type>
+root.trust.manager.password=<truststore_password>
+root.entity.id=<sp_entity_id>
+root.metadata.cache=<metadata_cache_dir>
 ```
 
 The properties are:
@@ -47,7 +52,8 @@ The properties are:
 - `keystore_path`: path of the OpenAM keystore file (/usr/share/tomcat/openam/openam/keystore.jks)
 - `keystore_type`: the keystore type (JKS or PKCS12)
 - `keystore_password`: the password protecting the keystore
-- `keystore_alias`: the alias for the service certificate in the keystore
+- `key_alias`: the alias for the service private key in the keystore
+- `key_passphrase`: the passphrase that protects the private key in the keystore
 - `truststore_path`: the path of the JVM trust anchors file (/etc/pki/ca-trust/extracted/java/cacerts)
 - `truststore_type`: the truststore type (JKS or PKCS12)
 - `truststore_password`: the password protecting the truststore (changeit)

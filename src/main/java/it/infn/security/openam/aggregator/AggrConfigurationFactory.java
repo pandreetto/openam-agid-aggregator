@@ -3,6 +3,8 @@ package it.infn.security.openam.aggregator;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.sun.identity.shared.debug.Debug;
+
 public class AggrConfigurationFactory {
 
     private static Map<String, AggrConfiguration> theConfiguration = new HashMap<String, AggrConfiguration>();
@@ -28,6 +30,7 @@ public class AggrConfigurationFactory {
                 theConfiguration.put(realm, tmpConf);
 
             } catch (Throwable th) {
+                Debug.getInstance("Aggregator").error(th.getMessage(), th);
                 throw new AggregatorException(th.getMessage());
             }
 
