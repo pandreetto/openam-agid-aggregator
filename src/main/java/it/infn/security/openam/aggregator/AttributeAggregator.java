@@ -3,6 +3,7 @@ package it.infn.security.openam.aggregator;
 import it.infn.security.openam.utils.SAML2ObjectBuilder;
 import it.infn.security.openam.utils.SignUtils;
 
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +12,8 @@ import java.util.UUID;
 
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.joda.time.DateTime;
 import org.opensaml.common.SAMLVersion;
@@ -36,7 +39,12 @@ import org.opensaml.ws.soap.client.http.TLSProtocolSocketFactory;
 import org.opensaml.ws.soap.soap11.Body;
 import org.opensaml.ws.soap.soap11.Envelope;
 import org.opensaml.xml.XMLObject;
+import org.opensaml.xml.io.Marshaller;
 import org.opensaml.xml.parse.BasicParserPool;
+import org.w3c.dom.Document;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSOutput;
+import org.w3c.dom.ls.LSSerializer;
 
 import com.sun.identity.shared.debug.Debug;
 
@@ -110,6 +118,8 @@ public class AttributeAggregator {
                 SignUtils.signObject(samlRequest, configuration.getServiceCertificate(),
                         configuration.getServicePrivateKey());
 
+                logSAMLMessage(samlRequest);
+
                 Body body = SAML2ObjectBuilder.buildBody();
                 body.getUnknownXMLObjects().add(samlRequest);
                 Envelope envelope = SAML2ObjectBuilder.buildEnvelope();
@@ -121,6 +131,8 @@ public class AttributeAggregator {
 
                 Envelope soapResponse = (Envelope) msgContext.getInboundMessage();
                 Response samlResponse = (Response) soapResponse.getBody().getOrderedChildren().get(0);
+
+                logSAMLMessage(samlResponse);
 
                 Status respStatus = samlResponse.getStatus();
                 String statusCode = respStatus.getStatusCode().getValue();
@@ -216,6 +228,32 @@ public class AttributeAggregator {
         BasicParserPool parserPool = new BasicParserPool();
         parserPool.setMaxPoolSize(httpClientBuilder.getMaxTotalConnections());
         return new HttpSOAPClient(httpClientBuilder.buildClient(), parserPool);
+
+    }
+
+    private void logSAMLMessage(XMLObject xmlObject) {
+        if (!debug.messageEnabled()) {
+            return;
+        }
+
+        try {
+            
+            DocumentBuilder docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document rootElement = docBuilder.newDocument();
+            Marshaller marshaller = SAML2ObjectBuilder.getMarshaller(xmlObject);
+            marshaller.marshall(xmlObject, rootElement);
+            DOMImplementationLS lsImpl = (DOMImplementationLS) rootElement.getImplementation();
+            LSSerializer domSerializer = lsImpl.createLSSerializer();
+            LSOutput lsOutput = lsImpl.createLSOutput();
+            lsOutput.setEncoding("UTF-8");
+            StringWriter xmlWriter = new StringWriter();
+            lsOutput.setCharacterStream(xmlWriter);
+            domSerializer.write(rootElement, lsOutput);
+            debug.message(xmlWriter.toString());
+            
+        } catch (Exception ex) {
+            debug.error(ex.getMessage(), ex);
+        }
 
     }
 
