@@ -160,7 +160,10 @@ public class AttributeAggregator {
                 if (info.getCertificates().size() == 0) {
                     throw new AggregatorException("Cannot validate signature: missing certificate");
                 }
-                SignUtils.verifySignature(samlAssertion.getSignature(), info.getCertificates().get(0));
+                /*
+                 * TODO check signature
+                 */
+                //SignUtils.verifySignature(samlAssertion.getSignature(), info.getCertificates().get(0));
 
                 if (!samlResponse.getInResponseTo().equals(requestId)) {
                     throw new AggregatorException("Request ID mismatch");
