@@ -3,7 +3,6 @@ package it.infn.security.openam.utils;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.xml.security.algorithms.MessageDigestAlgorithm;
@@ -28,9 +27,11 @@ import org.opensaml.xml.signature.X509Data;
 import org.opensaml.xml.signature.X509SubjectName;
 import org.opensaml.xml.validation.ValidationException;
 
+import com.sun.identity.shared.debug.Debug;
+
 public class SignUtils {
 
-    private static final Logger logger = Logger.getLogger(SignUtils.class.getName());
+    private static final Debug debug = Debug.getInstance("Aggregator");
 
     private static final Base64 base64Enc = new Base64(64, new byte[] { '\n' });
 
@@ -96,7 +97,7 @@ public class SignUtils {
 
         SignatureValidator signatureValidator = new SignatureValidator(peerCredential);
         signatureValidator.validate(signature);
-        logger.fine("Signature verified for " + subjectCertificate.getSubjectX500Principal().getName());
+        debug.message("Signature verified for " + subjectCertificate.getSubjectX500Principal().getName());
 
     }
 
