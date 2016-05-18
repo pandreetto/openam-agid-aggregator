@@ -167,7 +167,7 @@ public class AgIDAggrConfiguration
             ks.load(fis1, password);
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            kmf.init(ks, keyPwd.toCharArray());
+            kmf.init(ks, keyPwd != null ? keyPwd.toCharArray() : null);
 
             for (KeyManager kItem : kmf.getKeyManagers()) {
                 if (kItem instanceof X509KeyManager) {
