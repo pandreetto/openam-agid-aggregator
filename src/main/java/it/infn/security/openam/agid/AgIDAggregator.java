@@ -7,6 +7,7 @@ import it.infn.security.openam.aggregator.AttributeAggregator;
 import it.infn.security.openam.aggregator.AuthorityDiscovery;
 import it.infn.security.openam.aggregator.AuthorityDiscoveryFactory;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,15 +58,12 @@ public class AgIDAggregator
 
             Map<String, List<String>> attributes = aggregator.getAttributes(spidCode);
             for (String kName : attributes.keySet()) {
-                StringBuffer buff = new StringBuffer();
-                for (String value : attributes.get(kName)) {
-                    if (buff.length() > 0)
-                        buff.append(",");
-                    buff.append(value.trim());
-                }
-                debug.message("Found attribute " + kName + " = " + buff.toString());
-                token.setProperty(kName, buff.toString());
+                String tmpValue = concatValues(attributes.get(kName));
+                debug.message("Found attribute " + kName + " = " + tmpValue);
+                token.setProperty(kName, tmpValue);
             }
+
+            token.setProperty("spid_dict", concatValues(attributes.keySet()));
 
         } catch (SSOException ex) {
             debug.error("SSO exception", ex);
@@ -105,6 +103,19 @@ public class AgIDAggregator
             uidRegister.set(tmpUid);
         }
         return result;
+    }
+
+    private String concatValues(Collection<String> vItems) {
+        /*
+         * TODO check length and thow exception
+         */
+        StringBuffer buff = new StringBuffer();
+        for (String value : vItems) {
+            if (buff.length() > 0)
+                buff.append(",");
+            buff.append(value.trim());
+        }
+        return buff.toString();
     }
 
 }
