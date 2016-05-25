@@ -63,8 +63,25 @@ The properties are:
 
 Log in the OpenAM Console as administrator.
 
-In `Access Control`->`[Realm name]`->`Authentication`->`Core Settings`->`Authentication Post Processing Classes` add the class `it.infn.security.openam.agid.AgIDAggregator`
+In `[Realm name]`->`Authentication`->`Core Settings`->`Authentication Post Processing Classes` add the class `it.infn.security.openam.agid.AgIDAggregator`
 
 In `Federation`->`[SP name]`->`Assertion processing`->`Attribute mapper` define the attribute mapper as `it.infn.security.openam.agid.AgIDAggregator` and insert a new Attribute Map item as `uid=spidCode`
 
-In `Access Control`->`[Realm name]`->`Agents`->`[Agent name]`->`Application`->`Session Attributes Processing` se `HTTP_HEADER` as fetch mode and add a new Session Attribute Map item for any published attribute 
+In `[Realm name]`->`Agents`->`[Agent name]`->`Application`->`Session Attributes Processing` set `HTTP_HEADER` as fetch mode and add a new Session Attribute Map item for any published attribute
+
+In `Configuration`->`Global`->`Scripting`->`OIDC Claims`->`Engine Configuration`->`Java class whitelist` add the class `it.infn.security.openam.utils.OAuth2ClaimsBuilder`
+
+In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`Supported Scopes` add a new scope `spid`
+
+In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`Supported Claims` add all the attribute names for any Attribute Authority supported
+
+In `[Realm name]`->`Scripts` add the following new groovy script, with type `OIDC Claims`
+```
+import it.infn.security.openam.utils.OAuth2ClaimsBuilder
+import org.forgerock.oauth2.core.UserInfoClaims
+return OAuth2ClaimsBuilder.getUserInfoClaims(session, scopes, requestedClaims, logger)
+```
+
+In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`OIDC Claims Script` select the new groovy script
+
+
