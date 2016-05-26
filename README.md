@@ -79,7 +79,10 @@ In `[Realm name]`->`Scripts` add the following new groovy script, with type `OID
 ```
 import it.infn.security.openam.utils.OAuth2ClaimsBuilder
 import org.forgerock.oauth2.core.UserInfoClaims
-return OAuth2ClaimsBuilder.getUserInfoClaims(session, scopes, requestedClaims, logger)
+
+UserInfoClaims result = new UserInfoClaims(new HashMap<String, Object>(), new HashMap<String, ArrayList<String>>())
+OAuth2ClaimsBuilder.fillinSPIDClaims(result, session, scopes, requestedClaims, claims, logger)
+return result
 ```
 
 In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`OIDC Claims Script` select the new groovy script

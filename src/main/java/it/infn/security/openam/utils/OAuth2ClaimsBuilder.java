@@ -17,10 +17,16 @@ public class OAuth2ClaimsBuilder {
 
     public static final String SPID_SCOPE = "spid";
 
+    public static final String[] SPID_IDP_ATTRS = { "spidCode", "name", "familyName", "placeOfBirth", "countyOfBirth",
+            "dateOfBirth", "gender", "companyName", "registeredOffice", "fiscalNumber", "ivaCode", "idCard",
+            "mobilePhone", "email", "address", "expirationDate", "digitalAddress" };
+
     /**
-     * This method returns a the SPID attributes, or claims, contained in the session token. All the claims are mapped
-     * into the "spid" scope.
+     * This method fills in the user claim object with all the SPID attributes contained in the session token. All the
+     * claims are mapped into the "spid" scope.
      * 
+     * @param userInfoClaims
+     *            The user claim object to be filled in with the SPID attributes
      * @param token
      *            The user's session object, if present the request contains the session cookie, may be null
      * @param scopes
@@ -32,25 +38,36 @@ public class OAuth2ClaimsBuilder {
      *            its Set indicates this is the only value that should be returned. Never null
      * @param logger
      *            The "OAuth2Provider" debug logger instance, never null
-     * @return A Map of SPID claims to be added to the id_token claims
      */
-    public static UserInfoClaims getUserInfoClaims(SSOToken token, Collection<String> scopes,
-            Map<String, Set<String>> requestedClaims, Debug logger) {
+    public static void fillinSPIDClaims(UserInfoClaims userInfoClaims, SSOToken token, Collection<String> scopes,
+            Map<String, Set<String>> requestedClaims, Map<String, Set<String>> defaultClaims, Debug logger) {
 
-        Map<String, Object> claimTable = new HashMap<String, Object>();
-        Map<String, List<String>> compositeScopes = new HashMap<String, List<String>>();
+        for (String tmpk : defaultClaims.keySet()) {
+            StringBuffer tmpbuf = new StringBuffer("Default claim ");
+            tmpbuf.append(tmpk).append(": ");
+            for (String tmpv : defaultClaims.get(tmpk)) {
+                tmpbuf.append(tmpv).append(" ");
+            }
+            logger.message(tmpbuf.toString());
+        }
+
+        if (userInfoClaims == null)
+            return;
 
         if (token == null) {
             logger.error("Session not available");
-            return new UserInfoClaims(claimTable, compositeScopes);
+            return;
         }
 
         if (scopes.size() > 0 && !scopes.contains(SPID_SCOPE)) {
-            logger.message("Missing scope " + SPID_SCOPE + " but go on anyway");
-            // return new UserInfoClaims(claimTable, compositeScopes);
+            logger.message("SPID scope is not required");
+            return;
         }
 
         try {
+
+            Map<String, Object> claimTable = new HashMap<String, Object>();
+            Map<String, List<String>> compositeScopes = new HashMap<String, List<String>>();
 
             String tmps = token.getProperty("spid_dict");
             String[] attrNames = tmps != null ? tmps.split(",") : new String[0];
@@ -62,17 +79,23 @@ public class OAuth2ClaimsBuilder {
                 logger.message("Create claim " + attrName + ": " + token.getProperty(attrName));
             }
 
-            /*
-             * TODO claims for SPID attributes from IdP
-             */
+            for (String attrName : SPID_IDP_ATTRS) {
+                String tmpa = token.getProperty(attrName);
+                if (tmpa != null) {
+                    spidAttrList.add(attrName);
+                    claimTable.put(attrName, tmpa);
+                    logger.message("Create claim " + attrName + ": " + tmpa);
+                }
+            }
 
             compositeScopes.put(SPID_SCOPE, spidAttrList);
+
+            userInfoClaims.getValues().putAll(claimTable);
+            userInfoClaims.getCompositeScopes().putAll(compositeScopes);
 
         } catch (SSOException ssoEx) {
             logger.error(ssoEx.getMessage(), ssoEx);
         }
-
-        return new UserInfoClaims(claimTable, compositeScopes);
 
     }
 }
