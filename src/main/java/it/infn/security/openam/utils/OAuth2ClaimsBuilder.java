@@ -36,20 +36,13 @@ public class OAuth2ClaimsBuilder {
      *            claims_parameter_supported, map of requested claims to possible values, otherwise empty, requested
      *            claims with no requested values will have a key but no value in the map. A key with a single value in
      *            its Set indicates this is the only value that should be returned. Never null
+     * @param defaultClaims
+     *            The default server provided claims, never null
      * @param logger
      *            The "OAuth2Provider" debug logger instance, never null
      */
     public static void fillinSPIDClaims(UserInfoClaims userInfoClaims, SSOToken token, Collection<String> scopes,
             Map<String, Set<String>> requestedClaims, Map<String, Set<String>> defaultClaims, Debug logger) {
-
-        for (String tmpk : defaultClaims.keySet()) {
-            StringBuffer tmpbuf = new StringBuffer("Default claim ");
-            tmpbuf.append(tmpk).append(": ");
-            for (String tmpv : defaultClaims.get(tmpk)) {
-                tmpbuf.append(tmpv).append(" ");
-            }
-            logger.message(tmpbuf.toString());
-        }
 
         if (userInfoClaims == null)
             return;
