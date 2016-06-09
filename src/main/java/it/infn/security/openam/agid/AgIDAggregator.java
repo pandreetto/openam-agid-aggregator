@@ -23,6 +23,7 @@ import com.sun.identity.authentication.spi.AMPostAuthProcessInterface;
 import com.sun.identity.authentication.spi.AuthenticationException;
 import com.sun.identity.authentication.util.ISAuthConstants;
 import com.sun.identity.idm.AMIdentity;
+import com.sun.identity.idm.IdRepoException;
 import com.sun.identity.idm.IdUtils;
 import com.sun.identity.saml2.assertion.Attribute;
 import com.sun.identity.saml2.common.SAML2Exception;
@@ -40,7 +41,7 @@ public class AgIDAggregator
 
     private static ThreadLocal<String> uidRegister = new ThreadLocal<String>();
 
-    protected Debug debug = Debug.getInstance("Aggregator");
+    private static Debug debug = Debug.getInstance("Aggregator");
 
     @Override
     public void onLoginSuccess(@SuppressWarnings("rawtypes") Map requestParamsMap, HttpServletRequest request,
@@ -59,30 +60,7 @@ public class AgIDAggregator
 
             String realm = DNMapper.orgNameToRealmName(token.getProperty(ISAuthConstants.ORGANIZATION));
 
-            AggrConfiguration config = AggrConfigurationFactory.getInstance(realm);
-            AuthorityDiscovery disco = AuthorityDiscoveryFactory.getInstance(config);
-            AttributeAggregator aggregator = new AttributeAggregator(disco, config);
-
-            Map<String, Set<String>> attributes = aggregator.getAttributes(spidCode);
-            for (String kName : attributes.keySet()) {
-                String tmpValue = concatValues(attributes.get(kName));
-                debug.message("Found attribute " + kName + " = " + tmpValue);
-                token.setProperty(kName, tmpValue);
-            }
-
-            token.setProperty("spid_dict", concatValues(attributes.keySet()));
-
-            if (((AgIDAggrConfiguration) config).storeAttributesInProfile()) {
-                HashSet<String> tmpHash = new HashSet<String>(1);
-                tmpHash.add(spidCode);
-                attributes.put(UID_KEY, tmpHash);
-
-                AMIdentity id = IdUtils.getIdentity(AccessController.doPrivileged(AdminTokenAction.getInstance()),
-                        token.getProperty(Constants.UNIVERSAL_IDENTIFIER));
-                id.setAttributes(attributes);
-                debug.message("Storing attributes for user " + id.getName());
-                id.store();
-            }
+            aggregate(realm, token.getProperty(Constants.UNIVERSAL_IDENTIFIER), spidCode, token);
 
         } catch (SSOException ex) {
             debug.error("SSO exception", ex);
@@ -124,7 +102,38 @@ public class AgIDAggregator
         return result;
     }
 
-    private String concatValues(Collection<String> vItems) {
+    public static void aggregate(String realm, String uid, String spidCode, SSOToken session)
+        throws AggregatorException, IdRepoException, SSOException {
+
+        AggrConfiguration config = AggrConfigurationFactory.getInstance(realm);
+        AuthorityDiscovery disco = AuthorityDiscoveryFactory.getInstance(config);
+        AttributeAggregator aggregator = new AttributeAggregator(disco, config);
+
+        Map<String, Set<String>> attributes = aggregator.getAttributes(spidCode);
+        if (session != null) {
+            for (String kName : attributes.keySet()) {
+                String tmpValue = concatValues(attributes.get(kName));
+                debug.message("Found attribute " + kName + " = " + tmpValue);
+                session.setProperty(kName, tmpValue);
+            }
+
+            session.setProperty("spid_dict", concatValues(attributes.keySet()));
+        }
+
+        if (((AgIDAggrConfiguration) config).storeAttributesInProfile()) {
+            HashSet<String> tmpHash = new HashSet<String>(1);
+            tmpHash.add(spidCode);
+            attributes.put(UID_KEY, tmpHash);
+
+            AMIdentity id = IdUtils.getIdentity(AccessController.doPrivileged(AdminTokenAction.getInstance()), uid);
+            id.setAttributes(attributes);
+            debug.message("Storing attributes for user " + id.getName());
+            id.store();
+        }
+
+    }
+
+    private static String concatValues(Collection<String> vItems) {
         /*
          * TODO check length and throw exception
          */
