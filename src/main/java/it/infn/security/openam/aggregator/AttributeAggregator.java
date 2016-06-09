@@ -3,10 +3,11 @@ package it.infn.security.openam.aggregator;
 import it.infn.security.openam.utils.SAML2ObjectBuilder;
 import it.infn.security.openam.utils.SignUtils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.net.ssl.X509KeyManager;
@@ -45,6 +46,9 @@ public class AttributeAggregator {
     private static final HttpSOAPRequestParameters SOAP_PARAM = new HttpSOAPRequestParameters(
             "http://www.oasis-open.org/committees/security");
 
+    /*
+     * TODO use a standard logger (not OpenAM)
+     */
     private Debug debug = Debug.getInstance("Aggregator");
 
     private AuthorityDiscovery authDiscovery;
@@ -59,12 +63,12 @@ public class AttributeAggregator {
         soapClient = buildSOAPClient();
     }
 
-    public Map<String, List<String>> getAttributes(String subjectID)
+    public Map<String, Set<String>> getAttributes(String subjectID)
         throws AggregatorException {
 
         String entityId = configuration.getEntityID();
 
-        HashMap<String, List<String>> result = new HashMap<String, List<String>>();
+        HashMap<String, Set<String>> result = new HashMap<String, Set<String>>();
 
         for (AuthorityInfo info : authDiscovery.getAuthorityInfos()) {
 
@@ -167,7 +171,7 @@ public class AttributeAggregator {
                         List<XMLObject> xValues = attribute.getAttributeValues();
                         if (xValues != null) {
 
-                            List<String> aValues = new ArrayList<String>(xValues.size());
+                            HashSet<String> aValues = new HashSet<String>(xValues.size());
                             for (XMLObject value : xValues) {
                                 aValues.add(value.getDOM().getTextContent().trim());
                             }

@@ -45,6 +45,7 @@ root.trust.manager.type=<truststore_type>
 root.trust.manager.password=<truststore_password>
 root.entity.id=<sp_entity_id>
 root.metadata.cache=<metadata_cache_dir>
+root.openam.store.attributes=true
 ```
 
 The properties are:

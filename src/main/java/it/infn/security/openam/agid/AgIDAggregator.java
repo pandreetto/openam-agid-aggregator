@@ -7,7 +7,9 @@ import it.infn.security.openam.aggregator.AttributeAggregator;
 import it.infn.security.openam.aggregator.AuthorityDiscovery;
 import it.infn.security.openam.aggregator.AuthorityDiscoveryFactory;
 
+import java.security.AccessController;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,11 +21,16 @@ import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
 import com.sun.identity.authentication.spi.AMPostAuthProcessInterface;
 import com.sun.identity.authentication.spi.AuthenticationException;
-import com.sun.identity.plugin.session.SessionProvider;
+import com.sun.identity.authentication.util.ISAuthConstants;
+import com.sun.identity.idm.AMIdentity;
+import com.sun.identity.idm.IdUtils;
 import com.sun.identity.saml2.assertion.Attribute;
 import com.sun.identity.saml2.common.SAML2Exception;
 import com.sun.identity.saml2.plugins.DefaultSPAttributeMapper;
+import com.sun.identity.security.AdminTokenAction;
+import com.sun.identity.shared.Constants;
 import com.sun.identity.shared.debug.Debug;
+import com.sun.identity.sm.DNMapper;
 
 public class AgIDAggregator
     extends DefaultSPAttributeMapper
@@ -50,13 +57,13 @@ public class AgIDAggregator
                 uidRegister.remove();
             }
 
-            String realm = token.getProperty(SessionProvider.REALM);
+            String realm = DNMapper.orgNameToRealmName(token.getProperty(ISAuthConstants.ORGANIZATION));
 
             AggrConfiguration config = AggrConfigurationFactory.getInstance(realm);
             AuthorityDiscovery disco = AuthorityDiscoveryFactory.getInstance(config);
             AttributeAggregator aggregator = new AttributeAggregator(disco, config);
 
-            Map<String, List<String>> attributes = aggregator.getAttributes(spidCode);
+            Map<String, Set<String>> attributes = aggregator.getAttributes(spidCode);
             for (String kName : attributes.keySet()) {
                 String tmpValue = concatValues(attributes.get(kName));
                 debug.message("Found attribute " + kName + " = " + tmpValue);
@@ -64,6 +71,18 @@ public class AgIDAggregator
             }
 
             token.setProperty("spid_dict", concatValues(attributes.keySet()));
+
+            if (((AgIDAggrConfiguration) config).storeAttributesInProfile()) {
+                HashSet<String> tmpHash = new HashSet<String>(1);
+                tmpHash.add(spidCode);
+                attributes.put(UID_KEY, tmpHash);
+
+                AMIdentity id = IdUtils.getIdentity(AccessController.doPrivileged(AdminTokenAction.getInstance()),
+                        token.getProperty(Constants.UNIVERSAL_IDENTIFIER));
+                id.setAttributes(attributes);
+                debug.message("Storing attributes for user " + id.getName());
+                id.store();
+            }
 
         } catch (SSOException ex) {
             debug.error("SSO exception", ex);
@@ -107,7 +126,7 @@ public class AgIDAggregator
 
     private String concatValues(Collection<String> vItems) {
         /*
-         * TODO check length and thow exception
+         * TODO check length and throw exception
          */
         StringBuffer buff = new StringBuffer();
         for (String value : vItems) {
