@@ -45,7 +45,6 @@ root.trust.manager.type=<truststore_type>
 root.trust.manager.password=<truststore_password>
 root.entity.id=<sp_entity_id>
 root.metadata.cache=<metadata_cache_dir>
-root.openam.store.attributes=true
 ```
 
 The properties are:
@@ -70,22 +69,9 @@ In `Federation`->`[SP name]`->`Assertion processing`->`Attribute mapper` define 
 
 In `[Realm name]`->`Agents`->`[Agent name]`->`Application`->`Session Attributes Processing` set `HTTP_HEADER` as fetch mode and add a new Session Attribute Map item for any published attribute
 
-In `Configuration`->`Global`->`Scripting`->`OIDC Claims`->`Engine Configuration`->`Java class whitelist` add the class `it.infn.security.openam.utils.OAuth2ClaimsBuilder`
-
 In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`Supported Scopes` add a new scope `spid`
 
 In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`Supported Claims` add all the attribute names for any Attribute Authority supported
 
-In `[Realm name]`->`Scripts` add the following new groovy script, with type `OIDC Claims`
-```
-import it.infn.security.openam.utils.OAuth2ClaimsBuilder
-import org.forgerock.oauth2.core.UserInfoClaims
-
-UserInfoClaims result = new UserInfoClaims(new HashMap<String, Object>(), new HashMap<String, ArrayList<String>>())
-OAuth2ClaimsBuilder.fillinSPIDClaims(result, session, scopes, requestedClaims, claims, logger)
-return result
-```
-
-In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`OIDC Claims Script` select the new groovy script
-
+In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`Scope Implementation Class` define the implementation as `it.infn.security.openam.agid.AgIDScopeValidator`
 

@@ -58,8 +58,6 @@ public class AgIDAggrConfiguration
 
     private static final String BUFFER_SIZE = "buffer.size";
 
-    private static final String OAM_STORE_ATTRS = "openam.store.attributes";
-
     private String entityId;
 
     private String metadataDir;
@@ -81,8 +79,6 @@ public class AgIDAggrConfiguration
     private X509Certificate serviceCert = null;
 
     private PrivateKey serviceKey = null;
-
-    private boolean storeAttributes = false;
 
     protected Debug debug = Debug.getInstance("Aggregator");
 
@@ -150,8 +146,6 @@ public class AgIDAggrConfiguration
             }
 
             attrListStr = props.getProperty(prefix + ATTRIBUTES_LIST, "");
-
-            storeAttributes = Boolean.parseBoolean(props.getProperty(prefix + OAM_STORE_ATTRS, "false"));
 
         } catch (Throwable th) {
 
@@ -306,10 +300,6 @@ public class AgIDAggrConfiguration
     public int getMetadataValidity()
         throws AggregatorException {
         return mdValid;
-    }
-
-    public boolean storeAttributesInProfile() {
-        return storeAttributes;
     }
 
 }

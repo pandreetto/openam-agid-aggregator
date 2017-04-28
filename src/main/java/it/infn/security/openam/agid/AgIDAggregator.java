@@ -37,8 +37,6 @@ public class AgIDAggregator
     extends DefaultSPAttributeMapper
     implements AMPostAuthProcessInterface {
 
-    private static String UID_KEY = "spidCode";
-
     private static ThreadLocal<String> uidRegister = new ThreadLocal<String>();
 
     private static Debug debug = Debug.getInstance("Aggregator");
@@ -50,7 +48,7 @@ public class AgIDAggregator
 
         try {
 
-            // String spidCode = token.getProperty(UID_KEY);
+            // String spidCode = token.getProperty(AgIDAggrConstants.UID_KEY);
             String spidCode = uidRegister.get();
             if (spidCode == null) {
                 return;
@@ -90,10 +88,10 @@ public class AgIDAggregator
         throws SAML2Exception {
 
         Map<String, Set<String>> result = super.getAttributes(attributes, userID, hostEntityID, remoteEntityID, realm);
-        if (result.containsKey(UID_KEY)) {
-            Set<String> uidSet = result.get(UID_KEY);
+        if (result.containsKey(AgIDAggrConstants.UID_KEY)) {
+            Set<String> uidSet = result.get(AgIDAggrConstants.UID_KEY);
             if (uidSet.size() != 1) {
-                throw new SAML2Exception(UID_KEY + " must be defined and unique");
+                throw new SAML2Exception(AgIDAggrConstants.UID_KEY + " must be defined and unique");
             }
             String tmpUid = uidSet.iterator().next();
             debug.message("Set spidCode = " + tmpUid);
@@ -103,6 +101,11 @@ public class AgIDAggregator
     }
 
     public static void aggregate(String realm, String uid, String spidCode, SSOToken session)
+        throws AggregatorException, IdRepoException, SSOException {
+        aggregate(realm, uid, spidCode, session, true);
+    }
+
+    public static void aggregate(String realm, String uid, String spidCode, SSOToken session, boolean storeAttrs)
         throws AggregatorException, IdRepoException, SSOException {
 
         AggrConfiguration config = AggrConfigurationFactory.getInstance(realm);
@@ -117,18 +120,23 @@ public class AgIDAggregator
                 session.setProperty(kName, tmpValue);
             }
 
-            session.setProperty("spid_dict", concatValues(attributes.keySet()));
+            session.setProperty(AgIDAggrConstants.SPID_DICT, concatValues(attributes.keySet()));
         }
 
-        if (((AgIDAggrConfiguration) config).storeAttributesInProfile()) {
-            HashSet<String> tmpHash = new HashSet<String>(1);
-            tmpHash.add(spidCode);
-            attributes.put(UID_KEY, tmpHash);
+        if (storeAttrs) {
+            try {
+                HashSet<String> tmpHash = new HashSet<String>(1);
+                tmpHash.add(spidCode);
+                attributes.put(AgIDAggrConstants.UID_KEY, tmpHash);
 
-            AMIdentity id = IdUtils.getIdentity(AccessController.doPrivileged(AdminTokenAction.getInstance()), uid);
-            id.setAttributes(attributes);
-            debug.message("Storing attributes for user " + id.getName());
-            id.store();
+                SSOToken privToken = AccessController.doPrivileged(AdminTokenAction.getInstance());
+                AMIdentity id = IdUtils.getIdentity(privToken, uid);
+                id.setAttributes(attributes);
+                id.store();
+                debug.message("Stored attributes for " + id.getName() + " on " + realm);
+            } catch (Exception ex) {
+                debug.error(ex.getMessage(), ex);
+            }
         }
 
     }

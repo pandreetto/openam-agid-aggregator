@@ -1,5 +1,7 @@
 package it.infn.security.openam.utils;
 
+import it.infn.security.openam.agid.AgIDAggrConstants;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,8 +16,6 @@ import com.iplanet.sso.SSOToken;
 import com.sun.identity.shared.debug.Debug;
 
 public class OAuth2ClaimsBuilder {
-
-    public static final String SPID_SCOPE = "spid";
 
     public static final String[] SPID_IDP_ATTRS = { "spidCode", "name", "familyName", "placeOfBirth", "countyOfBirth",
             "dateOfBirth", "gender", "companyName", "registeredOffice", "fiscalNumber", "ivaCode", "idCard",
@@ -52,7 +52,7 @@ public class OAuth2ClaimsBuilder {
             return;
         }
 
-        if (scopes.size() > 0 && !scopes.contains(SPID_SCOPE)) {
+        if (scopes.size() > 0 && !scopes.contains(AgIDAggrConstants.SPID_SCOPE)) {
             logger.message("SPID scope is not required");
             return;
         }
@@ -62,7 +62,7 @@ public class OAuth2ClaimsBuilder {
             Map<String, Object> claimTable = new HashMap<String, Object>();
             Map<String, List<String>> compositeScopes = new HashMap<String, List<String>>();
 
-            String tmps = token.getProperty("spid_dict");
+            String tmps = token.getProperty(AgIDAggrConstants.SPID_DICT);
             String[] attrNames = tmps != null ? tmps.split(",") : new String[0];
 
             List<String> spidAttrList = new ArrayList<String>();
@@ -81,7 +81,7 @@ public class OAuth2ClaimsBuilder {
                 }
             }
 
-            compositeScopes.put(SPID_SCOPE, spidAttrList);
+            compositeScopes.put(AgIDAggrConstants.SPID_SCOPE, spidAttrList);
 
             userInfoClaims.getValues().putAll(claimTable);
             userInfoClaims.getCompositeScopes().putAll(compositeScopes);
