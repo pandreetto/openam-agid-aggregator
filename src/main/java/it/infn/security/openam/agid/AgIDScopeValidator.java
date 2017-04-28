@@ -38,7 +38,9 @@ import org.restlet.ext.servlet.ServletUtils;
 import com.iplanet.sso.SSOException;
 import com.iplanet.sso.SSOToken;
 import com.iplanet.sso.SSOTokenManager;
+import com.sun.identity.authentication.util.ISAuthConstants;
 import com.sun.identity.idm.AMIdentity;
+import com.sun.identity.idm.IdRepoException;
 import com.sun.identity.shared.debug.Debug;
 
 public class AgIDScopeValidator
@@ -80,34 +82,59 @@ public class AgIDScopeValidator
 
             if (accessToken != null) {
 
-                debug.message("Checking the access token");
                 String realm = accessToken.getRealm();
                 String ownerId = accessToken.getResourceOwnerId();
 
+                debug.message("Checking the access token for " + ownerId);
                 AMIdentity amId = identityManager.getResourceOwnerIdentity(ownerId, realm);
-                @SuppressWarnings("unchecked")
-                Set<String> tmpSet = amId.getAttribute(AgIDAggrConstants.UID_KEY);
-                if (tmpSet == null || tmpSet.size() == 0)
-                    throw new NotFoundException("No " + AgIDAggrConstants.UID_KEY + " for " + ownerId);
-                String spidCode = tmpSet.iterator().next();
 
-                debug.message("Aggregate attributes for " + spidCode);
-                AggrConfiguration config = AggrConfigurationFactory.getInstance(realm);
-                AuthorityDiscovery disco = AuthorityDiscoveryFactory.getInstance(config);
-                AttributeAggregator aggregator = new AttributeAggregator(disco, config);
+                String spidDict = getAttributeAsString(amId, AgIDAggrConstants.SPID_DICT);
+                if (spidDict != null) {
 
-                Map<String, Set<String>> attributes = aggregator.getAttributes(spidCode);
-                for (String attrName : attributes.keySet()) {
-                    spidAttrList.add(attrName);
-                    String attrValue = concatValues(attributes.get(attrName));
-                    claimTable.put(attrName, attrValue);
-                    debug.message("Create claim " + attrName + ": " + attrValue);
+                    String[] attrNames = spidDict.split(",");
+                    for (String attrName : attrNames) {
+
+                        spidAttrList.add(attrName);
+                        String attrValue = getAttributeAsString(amId, attrName);
+
+                        if (attrValue != null) {
+                            claimTable.put(attrName, attrValue);
+                            debug.message("Cached claim " + attrName + ": " + attrValue + " for " + ownerId);
+                        }
+                    }
+
+                } else {
+
+                    String spidCode = getAttributeAsString(amId, AgIDAggrConstants.UID_KEY);
+                    if (spidCode == null) {
+                        throw new NotFoundException("No " + AgIDAggrConstants.UID_KEY + " for " + ownerId);
+                    }
+
+                    debug.message("Aggregate attributes with " + spidCode + " for " + ownerId);
+                    AggrConfiguration config = AggrConfigurationFactory.getInstance(realm);
+                    AuthorityDiscovery disco = AuthorityDiscoveryFactory.getInstance(config);
+                    AttributeAggregator aggregator = new AttributeAggregator(disco, config);
+
+                    Map<String, Set<String>> attributes = aggregator.getAttributes(spidCode);
+                    for (String attrName : attributes.keySet()) {
+                        spidAttrList.add(attrName);
+                        String attrValue = concatValues(attributes.get(attrName));
+                        claimTable.put(attrName, attrValue);
+                        debug.message("Created claim " + attrName + ": " + attrValue + " for " + ownerId);
+                    }
+
                 }
 
             } else {
 
-                debug.message("Checking the SSO session");
                 SSOToken ssoToken = getUsersSession(request);
+                if(ssoToken==null){
+                    throw new NotFoundException("Cannot find session");
+                }
+                
+                String ownerId = ssoToken.getProperty(ISAuthConstants.USER_ID);
+                debug.message("Checking the SSO session for " + ownerId);
+
                 String tmps = ssoToken.getProperty(AgIDAggrConstants.SPID_DICT);
                 String[] attrNames = tmps != null ? tmps.split(",") : new String[0];
 
@@ -115,7 +142,7 @@ public class AgIDScopeValidator
                     spidAttrList.add(attrName);
                     String attrValue = ssoToken.getProperty(attrName);
                     claimTable.put(attrName, attrValue);
-                    debug.message("Create claim " + attrName + ": " + attrValue);
+                    debug.message("Created claim " + attrName + ": " + attrValue + " for " + ownerId);
                 }
 
             }
@@ -169,6 +196,17 @@ public class AgIDScopeValidator
             buff.append(value.trim());
         }
         return buff.toString();
+    }
+
+    private String getAttributeAsString(AMIdentity amId, String attrName)
+        throws IdRepoException, SSOException {
+
+        @SuppressWarnings("unchecked")
+        Set<String> tmpSet = amId.getAttribute(attrName);
+        if (tmpSet == null || tmpSet.size() == 0)
+            return null;
+        return concatValues(tmpSet);
+
     }
 
 }

@@ -102,35 +102,35 @@ public class AgIDAggregator
 
     public static void aggregate(String realm, String uid, String spidCode, SSOToken session)
         throws AggregatorException, IdRepoException, SSOException {
-        aggregate(realm, uid, spidCode, session, true);
-    }
-
-    public static void aggregate(String realm, String uid, String spidCode, SSOToken session, boolean storeAttrs)
-        throws AggregatorException, IdRepoException, SSOException {
 
         AggrConfiguration config = AggrConfigurationFactory.getInstance(realm);
         AuthorityDiscovery disco = AuthorityDiscoveryFactory.getInstance(config);
         AttributeAggregator aggregator = new AttributeAggregator(disco, config);
 
         Map<String, Set<String>> attributes = aggregator.getAttributes(spidCode);
+        
+        if (attributes.size()>0){
+            HashSet<String> tmpHash = new HashSet<String>(1);
+            tmpHash.add(concatValues(attributes.keySet()));
+            attributes.put(AgIDAggrConstants.SPID_DICT, tmpHash);
+        }
+        
         if (session != null) {
             for (String kName : attributes.keySet()) {
                 String tmpValue = concatValues(attributes.get(kName));
-                debug.message("Found attribute " + kName + " = " + tmpValue);
+                debug.message("Found attribute " + kName + " = " + tmpValue + " for " + spidCode);
                 session.setProperty(kName, tmpValue);
             }
-
-            session.setProperty(AgIDAggrConstants.SPID_DICT, concatValues(attributes.keySet()));
         }
 
-        if (storeAttrs) {
+        if (uid != null && uid.trim().length() > 0) {
             try {
                 HashSet<String> tmpHash = new HashSet<String>(1);
                 tmpHash.add(spidCode);
                 attributes.put(AgIDAggrConstants.UID_KEY, tmpHash);
 
                 SSOToken privToken = AccessController.doPrivileged(AdminTokenAction.getInstance());
-                AMIdentity id = IdUtils.getIdentity(privToken, uid);
+                AMIdentity id = IdUtils.getIdentity(privToken, uid.trim());
                 id.setAttributes(attributes);
                 id.store();
                 debug.message("Stored attributes for " + id.getName() + " on " + realm);
