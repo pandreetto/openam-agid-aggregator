@@ -48,8 +48,6 @@ public class AgIDScopeValidator
 
     private static Debug debug = Debug.getInstance("Aggregator");
 
-    public static final String SPID_SCOPE = "spid";
-
     private final OpenAMSettings openAMSettings;
 
     private final IdentityManager identityManager;
@@ -77,8 +75,8 @@ public class AgIDScopeValidator
 
             Map<String, Object> claimTable = new HashMap<String, Object>();
             Map<String, List<String>> compositeScopes = userInfo.getCompositeScopes();
-            List<String> spidAttrList = compositeScopes.containsKey(SPID_SCOPE) ? compositeScopes.get(SPID_SCOPE)
-                    : new ArrayList<String>();
+            List<String> spidAttrList = compositeScopes.containsKey(AgIDAggrConstants.SPID_SCOPE) ? compositeScopes
+                    .get(AgIDAggrConstants.SPID_SCOPE) : new ArrayList<String>();
 
             if (accessToken != null) {
 
@@ -105,7 +103,9 @@ public class AgIDScopeValidator
 
                 } else {
 
-                    String spidCode = getAttributeAsString(amId, AgIDAggrConstants.UID_KEY);
+                    Object tmpo = accessToken.toMap().get(AgIDAggrConstants.UID_KEY);
+                    String spidCode = tmpo != null ? tmpo.toString() : getAttributeAsString(amId,
+                            AgIDAggrConstants.UID_KEY);
                     if (spidCode == null) {
                         throw new NotFoundException("No " + AgIDAggrConstants.UID_KEY + " for " + ownerId);
                     }
@@ -128,10 +128,10 @@ public class AgIDScopeValidator
             } else {
 
                 SSOToken ssoToken = getUsersSession(request);
-                if(ssoToken==null){
+                if (ssoToken == null) {
                     throw new NotFoundException("Cannot find session");
                 }
-                
+
                 String ownerId = ssoToken.getProperty(ISAuthConstants.USER_ID);
                 debug.message("Checking the SSO session for " + ownerId);
 
@@ -148,7 +148,7 @@ public class AgIDScopeValidator
             }
 
             userInfo.getValues().putAll(claimTable);
-            compositeScopes.put(SPID_SCOPE, spidAttrList);
+            compositeScopes.put(AgIDAggrConstants.SPID_SCOPE, spidAttrList);
             userInfo.getCompositeScopes().putAll(compositeScopes);
 
         } catch (Throwable th) {

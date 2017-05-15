@@ -108,19 +108,21 @@ public class AgIDAggregator
         AttributeAggregator aggregator = new AttributeAggregator(disco, config);
 
         Map<String, Set<String>> attributes = aggregator.getAttributes(spidCode);
-        
-        if (attributes.size()>0){
+
+        if (attributes.size() > 0) {
             HashSet<String> tmpHash = new HashSet<String>(1);
             tmpHash.add(concatValues(attributes.keySet()));
             attributes.put(AgIDAggrConstants.SPID_DICT, tmpHash);
         }
-        
+
         if (session != null) {
             for (String kName : attributes.keySet()) {
                 String tmpValue = concatValues(attributes.get(kName));
                 debug.message("Found attribute " + kName + " = " + tmpValue + " for " + spidCode);
                 session.setProperty(kName, tmpValue);
             }
+
+            session.setProperty(AgIDAggrConstants.UID_KEY, spidCode);
         }
 
         if (uid != null && uid.trim().length() > 0) {
