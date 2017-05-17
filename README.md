@@ -69,6 +69,8 @@ In `Federation`->`[SP name]`->`Assertion processing`->`Attribute mapper` define 
 
 In `[Realm name]`->`Agents`->`[Agent name]`->`Application`->`Session Attributes Processing` set `HTTP_HEADER` as fetch mode and add a new Session Attribute Map item for any published attribute
 
+In `[Realm name]`->`Data Stores`->`[OpenDJ data store]`->`LDAP User Attributes` add the attribute name `spidCode`
+
 In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`Supported Scopes` add a new scope `spid`
 
 In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`Supported Claims` add all the attribute names for any Attribute Authority supported
