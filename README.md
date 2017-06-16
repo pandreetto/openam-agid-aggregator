@@ -77,3 +77,8 @@ In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`Supported Claims` add all t
 
 In `[Realm name]`->`Services`->`[OAuth2 Provider]`->`Scope Implementation Class` define the implementation as `it.infn.security.openam.agid.AgIDScopeValidator`
 
+The aggregator stores the value of the SPID code in the LDAP user profile.
+Since there's no schema containing the definition for the attribute spidCode it is necessary to disable the LDAP schema checking as described 
+in the [documentation](https://backstage.forgerock.com/docs/opendj/3/admin-guide/chap-schema#schema-legacy-support) of OpenDJ.
+
+
