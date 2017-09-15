@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.XMLConstants;
@@ -47,6 +50,12 @@ public class AgIDAggregator
     implements AMPostAuthProcessInterface {
 
     private static final String CF_ATTR_NAME = "fiscalCode";
+
+    private static final String GNAME_ATTR_NAME = "givenName";
+
+    private static final String SN_ATTR_NAME = "sn";
+
+    private static final String MAIL_ATTR_NAME = "email";
 
     private static ThreadLocal<String> uidRegister = new ThreadLocal<String>();
 
@@ -115,6 +124,9 @@ public class AgIDAggregator
         try {
 
             String fisCode = null;
+            String givenName = null;
+            String surName = null;
+            String email = null;
 
             for (Attribute attr : attributes) {
 
@@ -156,18 +168,46 @@ public class AgIDAggregator
 
                 fisCode = ((Element) cfElem.item(0)).getTextContent();
 
+                NodeList attrTokElems = ((Element) ssoTokElem.item(0)).getElementsByTagName("attribute");
+                if (attrTokElems == null) {
+                    debug.message("Missing attribute");
+                    continue;
+                }
+
+                for (int k = 0; k < attrTokElems.getLength(); k++) {
+                    NodeList nameElem = ((Element) attrTokElems.item(k)).getElementsByTagName("name");
+                    String aName = ((Element) nameElem.item(0)).getTextContent();
+
+                    if (!aName.equals("idpAssertionAttributes"))
+                        continue;
+
+                    NodeList valueElem = ((Element) attrTokElems.item(k)).getElementsByTagName("value");
+                    String jsonStr = ((Element) valueElem.item(0)).getTextContent();
+
+                    JsonReader jReader = Json.createReader(new StringReader(jsonStr));
+                    JsonObject rootObj = jReader.readObject();
+
+                    givenName = rootObj.getJsonArray("name").getString(0);
+                    surName = rootObj.getJsonArray("familyName").getString(0);
+                    email = rootObj.getJsonArray("email").getString(0);
+                }
+
             }
 
             if (fisCode != null) {
-                debug.message("Found fiscal code: " + fisCode);
+                attributes.add(buildSAMLAttribute(CF_ATTR_NAME, fisCode));
+            }
 
-                AttributeImpl cfAttrib = new AttributeImpl();
-                cfAttrib.setName(CF_ATTR_NAME);
-                List<String> cfValues = new ArrayList<String>(1);
-                cfValues.add(fisCode);
-                cfAttrib.setAttributeValueString(cfValues);
+            if (givenName != null) {
+                attributes.add(buildSAMLAttribute(GNAME_ATTR_NAME, givenName));
+            }
 
-                attributes.add(cfAttrib);
+            if (surName != null) {
+                attributes.add(buildSAMLAttribute(SN_ATTR_NAME, surName));
+            }
+
+            if (email != null) {
+                attributes.add(buildSAMLAttribute(MAIL_ATTR_NAME, email));
             }
 
         } catch (Throwable th) {
@@ -241,6 +281,20 @@ public class AgIDAggregator
             buff.append(value.trim());
         }
         return buff.toString();
+    }
+
+    private AttributeImpl buildSAMLAttribute(String name, String value)
+        throws SAML2Exception {
+        debug.message("Build " + name + ": " + value);
+
+        AttributeImpl result = new AttributeImpl();
+        result.setName(name);
+        List<String> cfValues = new ArrayList<String>(1);
+        cfValues.add(value);
+        result.setAttributeValueString(cfValues);
+
+        return result;
+
     }
 
 }
