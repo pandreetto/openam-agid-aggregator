@@ -132,6 +132,7 @@ public class AttributeAggregator {
                 if (!statusCode.equals(StatusCode.SUCCESS_URI)) {
                     StringBuffer buff = new StringBuffer("No attributes from ");
                     buff.append(info.getEntityID());
+                    buff.append(" for ").append(subjectID);
 
                     StatusMessage msg = respStatus.getStatusMessage();
                     if (msg != null) {
