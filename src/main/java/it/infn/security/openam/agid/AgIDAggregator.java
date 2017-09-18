@@ -54,6 +54,8 @@ public class AgIDAggregator
     private static final String GNAME_ATTR_NAME = "givenName";
 
     private static final String SN_ATTR_NAME = "sn";
+    
+    private static final String CN_ATTR_NAME = "cn";
 
     private static final String MAIL_ATTR_NAME = "email";
 
@@ -204,6 +206,10 @@ public class AgIDAggregator
 
             if (surName != null) {
                 attributes.add(buildSAMLAttribute(SN_ATTR_NAME, surName));
+            }
+
+            if (surName != null && givenName != null) {
+                attributes.add(buildSAMLAttribute(CN_ATTR_NAME, givenName + " " + surName));
             }
 
             if (email != null) {
